@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-// Remove this: import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'models/checklist_state.dart';
 import 'models/vehicle.dart';
 import 'models/maintenance_record.dart';
 import 'screens/home_screen.dart';
 import 'utils/theme.dart';
-
-// Remove this:
-// final FlutterLocalNotificationsPlugin notificationsPlugin =
-//     FlutterLocalNotificationsPlugin();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,10 +13,11 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(VehicleAdapter());
   Hive.registerAdapter(MaintenanceRecordAdapter());
+  Hive.registerAdapter(ChecklistStateAdapter());
+
   await Hive.openBox<Vehicle>('vehicles');
   await Hive.openBox<MaintenanceRecord>('maintenance');
-
-  // Remove notification initialization
+  await Hive.openBox<ChecklistState>('checklist');
 
   runApp(const ProviderScope(child: MyApp()));
 }

@@ -31,7 +31,7 @@ class VehicleServiceTab extends ConsumerWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -151,7 +151,7 @@ class VehicleServiceTab extends ConsumerWidget {
     final partsCount = records.where((r) => r.type == 'parts').length;
 
     return Card(
-      color: Theme.of(context).primaryColor.withOpacity(0.1),
+      color: Theme.of(context).primaryColor,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -195,13 +195,13 @@ class VehicleServiceTab extends ConsumerWidget {
   }) {
     return Column(
       children: [
-        Icon(icon, color: Theme.of(context).primaryColor),
+        Icon(icon, color: Colors.white),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[200])),
       ],
     );
   }

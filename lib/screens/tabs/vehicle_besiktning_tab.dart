@@ -26,6 +26,8 @@ class VehicleBesiktningTab extends StatelessWidget {
 
           // Info section
           _buildInfoSection(context),
+
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -36,7 +38,7 @@ class VehicleBesiktningTab extends StatelessWidget {
     final urgencyColor = _getUrgencyColor(vehicle.urgencyLevel);
 
     return Card(
-      color: urgencyColor.withValues(alpha: 0.1),
+      color: urgencyColor.withValues(alpha: 0.45),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -68,13 +70,13 @@ class VehicleBesiktningTab extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: urgencyColor,
+                        color: Colors.grey[200],
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _getWeekdayName(vehicle.nextBesiktningDate),
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: Colors.grey[200]),
                     ),
                   ],
                 ),
@@ -223,7 +225,7 @@ class VehicleBesiktningTab extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 28),

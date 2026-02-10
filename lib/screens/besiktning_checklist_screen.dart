@@ -1,150 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vehicle.dart';
 import '../widgets/checklist_item.dart';
+import '../providers/checklist_provider.dart';
+import 'package:intl/intl.dart';
 
-class BesiktningChecklistScreen extends StatefulWidget {
+class BesiktningChecklistScreen extends ConsumerWidget {
   final Vehicle vehicle;
 
   const BesiktningChecklistScreen({super.key, required this.vehicle});
 
   @override
-  State<BesiktningChecklistScreen> createState() =>
-      _BesiktningChecklistScreenState();
-}
-
-class _BesiktningChecklistScreenState extends State<BesiktningChecklistScreen> {
-  final Map<String, bool> _checkedItems = {};
-
-  final List<Map<String, String>> _checklistItems = [
-    {
-      'title': 'Belysning',
-      'description':
-          'Kontrollera alla lampor (helljus, halvljus, blinkers, bromljus)',
-    },
-    {
-      'title': 'Vindrutetorkare',
-      'description': 'Kontrollera att torkarna fungerar och inte är slitna',
-    },
-    {
-      'title': 'Däck',
-      'description': 'Mönsterdjup minst 1,6 mm. Kontrollera på alla däck.',
-    },
-    {
-      'title': 'Bromsar',
-      'description': 'Kontrollera att bromsarna känns bra och inte vibrerar',
-    },
-    {
-      'title': 'Spegel och glas',
-      'description':
-          'Inga sprickor i vindruta, backspeglar hela och justerbara',
-    },
-    {
-      'title': 'Utsläpp',
-      'description': 'Avgassystemet ska vara helt, inga läckage eller rost',
-    },
-    {
-      'title': 'Oljor och vätskor',
-      'description': 'Kontrollera motorolja, spolarvätska, kylvätska',
-    },
-    {
-      'title': 'Registreringsskylt',
-      'description': 'Skylten ska vara hel, ren och läsbar',
-    },
-    {
-      'title': 'Varningstriangel',
-      'description': 'Ska finnas i bilen och vara hel',
-    },
-    {
-      'title': 'Säkerhetsbälten',
-      'description': 'Alla bälten ska fungera och låsa ordentligt',
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    for (var item in _checklistItems) {
-      _checkedItems[item['title']!] = false;
-    }
-  }
-
-  int get _checkedCount =>
-      _checkedItems.values.where((checked) => checked).length;
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = _checkedCount / _checklistItems.length;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final checklistState = ref.watch(checklistProvider(vehicle.id));
+    final progress = checklistState.progress;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Besiktnings-checklista')),
+      appBar: AppBar(
+        title: const Text('Besiktnings-checklista'),
+        actions: [
+          // Clear button
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Rensa alla',
+            onPressed: checklistState.checkedCount > 0
+                ? () => _showClearConfirmation(context, ref)
+                : null,
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Progress card
-          Card(
-            margin: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Framsteg',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(
-                        '$_checkedCount/${_checklistItems.length}',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: progress,
-                    backgroundColor: Colors.grey[300],
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  if (progress == 1.0) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(Icons.check_circle, color: Colors.green, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Alla punkter kontrollerade!',
-                          style: TextStyle(
-                            color: Colors.green[700],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+          _buildProgressCard(context, checklistState, progress),
+
+          // Last completed info
+          if (checklistState.lastCompleted != null)
+            _buildLastCompletedBanner(context, checklistState),
 
           // Checklist items
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _checklistItems.length,
+              itemCount: defaultChecklistItems.length,
               itemBuilder: (context, index) {
-                final item = _checklistItems[index];
+                final item = defaultChecklistItems[index];
+                final title = item['title']!;
                 return ChecklistItem(
-                  title: item['title']!,
+                  title: title,
                   description: item['description']!,
-                  isChecked: _checkedItems[item['title']!]!,
+                  isChecked: checklistState.checkedItems[title] ?? false,
                   onChanged: (value) {
-                    setState(() {
-                      _checkedItems[item['title']!] = value ?? false;
-                    });
+                    ref
+                        .read(checklistNotifierProvider.notifier)
+                        .updateItem(vehicle.id, title, value ?? false);
                   },
                 );
               },
@@ -153,5 +62,181 @@ class _BesiktningChecklistScreenState extends State<BesiktningChecklistScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildProgressCard(
+    BuildContext context,
+    dynamic checklistState,
+    double progress,
+  ) {
+    final isComplete = progress == 1.0;
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      color: isComplete
+          ? Colors.green.withValues(alpha: 0.9)
+          : Theme.of(context).primaryColor.withValues(alpha: 0.7),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isComplete ? 'Klart!' : 'Framsteg',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isComplete ? Colors.white : null,
+                  ),
+                ),
+                Text(
+                  '${checklistState.checkedCount}/${checklistState.totalItems}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isComplete ? Colors.white : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: isComplete
+                    ? Colors.white.withValues(alpha: 0.3)
+                    : Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isComplete ? Colors.white : Theme.of(context).primaryColor,
+                ),
+                minHeight: 8,
+              ),
+            ),
+            if (isComplete) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Alla punkter kontrollerade! Din bil är redo för besiktning.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            /*             if (!isComplete && checklistState.lastUpdated != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Senast uppdaterad: ${_formatDateTime(checklistState.lastUpdated)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ], */
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLastCompletedBanner(
+    BuildContext context,
+    dynamic checklistState,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.history, color: Colors.blue[700], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Senast komplett: ${_formatDateTime(checklistState.lastCompleted)}',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.blue[900],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showClearConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rensa checklista?'),
+        content: const Text(
+          'Detta kommer ta bort alla dina checkmarkeringar. Vill du fortsätta?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Avbryt'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Rensa'),
+          ),
+        ],
+      ),
+    );
+
+    // Handle the confirmation OUTSIDE the dialog context
+    if (confirmed == true && context.mounted) {
+      ref.read(checklistNotifierProvider.notifier).clearChecklist(vehicle.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Checklista rensad'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just nu';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes} min sedan';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours} tim sedan';
+    } else if (difference.inDays == 1) {
+      return 'Igår ${DateFormat('HH:mm').format(dateTime)}';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} dagar sedan';
+    } else {
+      return DateFormat('d MMM yyyy, HH:mm').format(dateTime);
+    }
   }
 }

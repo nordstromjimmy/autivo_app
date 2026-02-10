@@ -34,7 +34,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
   final List<Map<String, dynamic>> _maintenanceTypes = [
     {'value': 'service', 'label': 'Service', 'icon': Icons.build},
     {'value': 'parts', 'label': 'Reservdel', 'icon': Icons.settings},
-    {'value': 'tire_change', 'label': 'Däckbyte', 'icon': Icons.album},
+    /*     {'value': 'tire_change', 'label': 'Däckbyte', 'icon': Icons.album}, */
     {'value': 'besiktning', 'label': 'Besiktning', 'icon': Icons.verified},
     {'value': 'other', 'label': 'Annat', 'icon': Icons.description},
   ];
@@ -188,9 +188,9 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            Wrap(
+            Column(
               spacing: 8,
-              runSpacing: 8,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: _maintenanceTypes.map((type) {
                 final isSelected = _selectedType == type['value'];
                 return FilterChip(
