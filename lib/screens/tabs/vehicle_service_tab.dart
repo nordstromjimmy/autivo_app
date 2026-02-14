@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/maintenance_record.dart';
+import '../../models/vehicle.dart';
 import '../../providers/maintenance_provider.dart';
 import '../../widgets/maintenance_list_item.dart';
 import '../add_maintenance_screen.dart';
+import '../maintenance_history_screen.dart';
 
 class VehicleServiceTab extends ConsumerWidget {
-  final String vehicleId;
+  final Vehicle vehicle;
 
-  const VehicleServiceTab({super.key, required this.vehicleId});
+  const VehicleServiceTab({super.key, required this.vehicle});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maintenanceRecords = ref.watch(maintenanceProvider(vehicleId));
+    final maintenanceRecords = ref.watch(maintenanceProvider(vehicle.id));
 
     return Column(
       children: [
@@ -44,7 +46,7 @@ class VehicleServiceTab extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        AddMaintenanceScreen(vehicleId: vehicleId),
+                        AddMaintenanceScreen(vehicleId: vehicle.id),
                   ),
                 );
               },
@@ -83,19 +85,6 @@ class VehicleServiceTab extends ConsumerWidget {
               style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 24),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AddMaintenanceScreen(vehicleId: vehicleId),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Lägg till första service'),
-            ),
           ],
         ),
       ),
@@ -106,6 +95,10 @@ class VehicleServiceTab extends ConsumerWidget {
     BuildContext context,
     List<MaintenanceRecord> records,
   ) {
+    // Show only last 5 records
+    final displayRecords = records.take(5).toList();
+    final hasMore = records.isNotEmpty;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -119,13 +112,13 @@ class VehicleServiceTab extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Servicehistorik',
+              'Senaste',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             Text(
-              '${records.length} poster',
+              hasMore ? '${records.length} totalt' : '${records.length} poster',
               style: TextStyle(color: Colors.grey[600]),
             ),
           ],
@@ -133,8 +126,32 @@ class VehicleServiceTab extends ConsumerWidget {
 
         const SizedBox(height: 12),
 
-        // Records
-        ...records.map((record) => MaintenanceListItem(record: record)),
+        // Show only 5 records
+        ...displayRecords.map((record) => MaintenanceListItem(record: record)),
+
+        // "View all" button if more records exist
+        if (hasMore) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MaintenanceHistoryScreen(
+                    vehicleId: vehicle.id,
+                    vehicleName:
+                        '${vehicle.make} ${vehicle.model} (${vehicle.registrationNumber})',
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.list),
+            label: Text('Visa alla'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -201,7 +218,7 @@ class VehicleServiceTab extends ConsumerWidget {
           value,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[200])),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[400])),
       ],
     );
   }

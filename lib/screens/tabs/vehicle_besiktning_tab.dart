@@ -21,13 +21,6 @@ class VehicleBesiktningTab extends StatelessWidget {
 
           // Quick actions
           _buildQuickActions(context),
-
-          const SizedBox(height: 16),
-
-          // Info section
-          _buildInfoSection(context),
-
-          const SizedBox(height: 16),
         ],
       ),
     );
@@ -141,68 +134,70 @@ class VehicleBesiktningTab extends StatelessWidget {
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Förberedelser',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-
-        // Checklist button
-        _buildActionCard(
-          context,
-          icon: Icons.checklist,
-          title: 'Checklista',
-          description: 'Kontrollera din bil innan besiktning',
-          color: Colors.blue,
-          onTap: () {
-            Navigator.push(
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Förberedelser',
+            style: Theme.of(
               context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    BesiktningChecklistScreen(vehicle: vehicle),
-              ),
-            );
-          },
-        ),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
 
-        const SizedBox(height: 8),
+          // Checklist button
+          _buildActionCard(
+            context,
+            icon: Icons.checklist,
+            title: 'Checklista',
+            description: 'Kontrollera din bil innan besiktning',
+            color: Colors.blue,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      BesiktningChecklistScreen(vehicle: vehicle),
+                ),
+              );
+            },
+          ),
 
-        // Common failures button
-        _buildActionCard(
-          context,
-          icon: Icons.warning_amber,
-          title: 'Vanliga fel',
-          description:
-              'Se vad som ofta går fel på ${vehicle.make} ${vehicle.model}',
-          color: Colors.orange,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Vanliga fel - kommer snart')),
-            );
-          },
-        ),
+          const SizedBox(height: 8),
 
-        const SizedBox(height: 8),
+          // Common failures button
+          _buildActionCard(
+            context,
+            icon: Icons.warning_amber,
+            title: 'Vanliga fel',
+            description:
+                'Se vad som ofta går fel på ${vehicle.make} ${vehicle.model}',
+            color: Colors.orange,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Vanliga fel - kommer snart')),
+              );
+            },
+          ),
 
-        // Find station button
-        _buildActionCard(
-          context,
-          icon: Icons.location_on,
-          title: 'Hitta besiktningsstation',
-          description: 'Boka tid på närmaste station',
-          color: Colors.green,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Hitta station - kommer snart')),
-            );
-          },
-        ),
-      ],
+          const SizedBox(height: 8),
+
+          // Find station button
+          _buildActionCard(
+            context,
+            icon: Icons.location_on,
+            title: 'Hitta besiktningsstation',
+            description: 'Boka tid på närmaste station',
+            color: Colors.green,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Hitta station - kommer snart')),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -254,48 +249,6 @@ class VehicleBesiktningTab extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoSection(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue[700]),
-                const SizedBox(width: 8),
-                Text(
-                  'Besiktningsinformation',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildInfoRow('Första besiktning', '3 år efter registrering'),
-            _buildInfoRow('Därefter', 'Var 14:e månad'),
-            _buildInfoRow('Efterkontroll', 'Inom 2 månader vid underkänt'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: Colors.grey[600])),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
       ),
     );
   }

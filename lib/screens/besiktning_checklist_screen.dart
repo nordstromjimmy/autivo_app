@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vehicle.dart';
 import '../widgets/checklist_item.dart';
 import '../providers/checklist_provider.dart';
-import 'package:intl/intl.dart';
 
 class BesiktningChecklistScreen extends ConsumerWidget {
   final Vehicle vehicle;
@@ -34,29 +33,27 @@ class BesiktningChecklistScreen extends ConsumerWidget {
           // Progress card
           _buildProgressCard(context, checklistState, progress),
 
-          // Last completed info
-          if (checklistState.lastCompleted != null)
-            _buildLastCompletedBanner(context, checklistState),
-
           // Checklist items
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: defaultChecklistItems.length,
-              itemBuilder: (context, index) {
-                final item = defaultChecklistItems[index];
-                final title = item['title']!;
-                return ChecklistItem(
-                  title: title,
-                  description: item['description']!,
-                  isChecked: checklistState.checkedItems[title] ?? false,
-                  onChanged: (value) {
-                    ref
-                        .read(checklistNotifierProvider.notifier)
-                        .updateItem(vehicle.id, title, value ?? false);
-                  },
-                );
-              },
+            child: SafeArea(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: defaultChecklistItems.length,
+                itemBuilder: (context, index) {
+                  final item = defaultChecklistItems[index];
+                  final title = item['title']!;
+                  return ChecklistItem(
+                    title: title,
+                    description: item['description']!,
+                    isChecked: checklistState.checkedItems[title] ?? false,
+                    onChanged: (value) {
+                      ref
+                          .read(checklistNotifierProvider.notifier)
+                          .updateItem(vehicle.id, title, value ?? false);
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -132,50 +129,8 @@ class BesiktningChecklistScreen extends ConsumerWidget {
                 ],
               ),
             ],
-            /*             if (!isComplete && checklistState.lastUpdated != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Senast uppdaterad: ${_formatDateTime(checklistState.lastUpdated)}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ], */
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildLastCompletedBanner(
-    BuildContext context,
-    dynamic checklistState,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.history, color: Colors.blue[700], size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Senast komplett: ${_formatDateTime(checklistState.lastCompleted)}',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.blue[900],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -217,26 +172,6 @@ class BesiktningChecklistScreen extends ConsumerWidget {
           ),
         );
       }
-    }
-  }
-
-  String _formatDateTime(DateTime? dateTime) {
-    if (dateTime == null) return '';
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'Just nu';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes} min sedan';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours} tim sedan';
-    } else if (difference.inDays == 1) {
-      return 'Igår ${DateFormat('HH:mm').format(dateTime)}';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} dagar sedan';
-    } else {
-      return DateFormat('d MMM yyyy, HH:mm').format(dateTime);
     }
   }
 }

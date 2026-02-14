@@ -26,13 +26,22 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       engineSize: fields[6] as String?,
       nextBesiktningDate: fields[7] as DateTime,
       createdAt: fields[8] as DateTime?,
+      verificationLevel: fields[9] as String,
+      verifiedAt: fields[10] as DateTime?,
+      verificationProof: fields[11] as String?,
+      isCurrentOwner: fields[12] as bool,
+      ownershipStartDate: fields[13] as DateTime?,
+      ownershipEndDate: fields[14] as DateTime?,
+      transferCode: fields[15] as String?,
+      previousOwnerId: fields[16] as String?,
+      receivedViaTransfer: fields[17] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Vehicle obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +59,25 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       ..writeByte(7)
       ..write(obj.nextBesiktningDate)
       ..writeByte(8)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(9)
+      ..write(obj.verificationLevel)
+      ..writeByte(10)
+      ..write(obj.verifiedAt)
+      ..writeByte(11)
+      ..write(obj.verificationProof)
+      ..writeByte(12)
+      ..write(obj.isCurrentOwner)
+      ..writeByte(13)
+      ..write(obj.ownershipStartDate)
+      ..writeByte(14)
+      ..write(obj.ownershipEndDate)
+      ..writeByte(15)
+      ..write(obj.transferCode)
+      ..writeByte(16)
+      ..write(obj.previousOwnerId)
+      ..writeByte(17)
+      ..write(obj.receivedViaTransfer);
   }
 
   @override

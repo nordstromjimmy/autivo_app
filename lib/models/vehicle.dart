@@ -31,6 +31,35 @@ class Vehicle extends HiveObject {
   @HiveField(8)
   DateTime createdAt;
 
+  // Ownership verification fields
+  @HiveField(9)
+  String verificationLevel; // 'none', 'self', 'sms', 'official'
+
+  @HiveField(10)
+  DateTime? verifiedAt;
+
+  @HiveField(11)
+  String? verificationProof; // Path to uploaded document or SMS confirmation
+
+  @HiveField(12)
+  bool isCurrentOwner; // User claims current ownership
+
+  @HiveField(13)
+  DateTime? ownershipStartDate; // When they got the car
+
+  @HiveField(14)
+  DateTime? ownershipEndDate; // When they sold it (null if still owner)
+
+  // History transfer
+  @HiveField(15)
+  String? transferCode; // Code to give to new owner
+
+  @HiveField(16)
+  String? previousOwnerId; // Link to previous owner's history
+
+  @HiveField(17)
+  bool receivedViaTransfer; // Was this transferred from another user?
+
   Vehicle({
     required this.id,
     required this.registrationNumber,
@@ -41,9 +70,18 @@ class Vehicle extends HiveObject {
     this.engineSize,
     required this.nextBesiktningDate,
     DateTime? createdAt,
+    this.verificationLevel = 'none',
+    this.verifiedAt,
+    this.verificationProof,
+    this.isCurrentOwner = true,
+    this.ownershipStartDate,
+    this.ownershipEndDate,
+    this.transferCode,
+    this.previousOwnerId,
+    this.receivedViaTransfer = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // Helper methods
+  // Getters
   int get daysUntilBesiktning {
     return nextBesiktningDate.difference(DateTime.now()).inDays;
   }
@@ -52,9 +90,38 @@ class Vehicle extends HiveObject {
   bool get isBesiktningOverdue => daysUntilBesiktning < 0;
 
   String get urgencyLevel {
-    if (isBesiktningOverdue) return 'overdue';
-    if (daysUntilBesiktning <= 14) return 'critical';
+    if (daysUntilBesiktning < 0) return 'overdue';
+    if (daysUntilBesiktning <= 7) return 'critical';
     if (daysUntilBesiktning <= 30) return 'warning';
     return 'ok';
+  }
+
+  bool get isVerified => verificationLevel != 'none';
+
+  String get verificationBadge {
+    switch (verificationLevel) {
+      case 'self':
+        return '✓ Ägare';
+      case 'sms':
+        return '✓ Verifierad';
+      case 'official':
+        return '✓ Officiellt Verifierad';
+      default:
+        return '';
+    }
+  }
+
+  String get ownershipStatus {
+    if (isCurrentOwner) {
+      return 'Nuvarande ägare';
+    } else if (ownershipEndDate != null) {
+      return 'Tidigare ägare (till ${_formatDate(ownershipEndDate!)})';
+    } else {
+      return 'Tidigare ägare';
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}';
   }
 }
