@@ -219,7 +219,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
               decoration: const InputDecoration(
                 labelText: 'Beskrivning *',
                 hintText: 'T.ex. "Oljebyte och filter"',
-                border: OutlineInputBorder(),
               ),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
@@ -236,11 +235,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
             InkWell(
               onTap: _selectDate,
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Datum',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.calendar_today),
-                ),
+                decoration: const InputDecoration(labelText: 'Datum'),
                 child: Text(_formatDate(_selectedDate)),
               ),
             ),
@@ -252,7 +247,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
               decoration: const InputDecoration(
                 labelText: 'Mätarställning',
                 hintText: '15000',
-                border: OutlineInputBorder(),
                 suffixText: 'km',
               ),
               keyboardType: TextInputType.number,
@@ -266,8 +260,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
               decoration: const InputDecoration(
                 labelText: 'Plats/Verkstad',
                 hintText: 'T.ex. "Biltema Stockholm"',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on),
               ),
               textCapitalization: TextCapitalization.words,
             ),
@@ -279,9 +271,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
               decoration: const InputDecoration(
                 labelText: 'Kostnad',
                 hintText: '2500',
-                border: OutlineInputBorder(),
                 suffixText: 'kr',
-                prefixIcon: Icon(Icons.attach_money),
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,

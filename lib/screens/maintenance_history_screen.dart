@@ -138,10 +138,6 @@ class _MaintenanceHistoryScreenState
         .where((r) => r.cost != null)
         .fold<double>(0, (sum, r) => sum + r.cost!);
 
-    final avgCost = records.where((r) => r.cost != null).isEmpty
-        ? 0.0
-        : totalCost / records.where((r) => r.cost != null).length;
-
     final thisYearRecords = records
         .where((r) => r.date.year == DateTime.now().year)
         .toList();

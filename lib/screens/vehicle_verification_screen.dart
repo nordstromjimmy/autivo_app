@@ -124,6 +124,9 @@ class VehicleVerificationScreen extends ConsumerWidget {
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Nollställ verifiering'),
               style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(12),
+                ),
                 foregroundColor: Colors.red,
                 side: BorderSide(color: Colors.red[300]!),
               ),

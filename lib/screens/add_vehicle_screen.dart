@@ -153,15 +153,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditMode ? 'Redigera fordon' : 'Lägg till fordon'),
-        /*         actions: isEditMode
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  color: Colors.red,
-                  onPressed: _deleteVehicle,
-                ),
-              ]
-            : null, */
       ),
       body: Form(
         key: _formKey,
@@ -173,7 +164,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               decoration: const InputDecoration(
                 labelText: 'Registreringsnummer *',
                 hintText: 'ABC123',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.confirmation_number),
               ),
               textCapitalization: TextCapitalization.characters,
@@ -204,7 +194,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               decoration: const InputDecoration(
                 labelText: 'Märke *',
                 hintText: 'Volvo',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.directions_car),
               ),
               textCapitalization: TextCapitalization.words,
@@ -222,7 +211,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               decoration: const InputDecoration(
                 labelText: 'Modell *',
                 hintText: 'V70',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.car_crash),
               ),
               textCapitalization: TextCapitalization.words,
@@ -240,7 +228,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               decoration: const InputDecoration(
                 labelText: 'Årsmodell *',
                 hintText: '2015',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.calendar_today),
               ),
               keyboardType: TextInputType.number,
@@ -326,6 +313,9 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 label: const Text('Ta bort fordon'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadiusGeometry.circular(12),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),

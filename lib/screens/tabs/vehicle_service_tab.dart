@@ -148,6 +148,9 @@ class VehicleServiceTab extends ConsumerWidget {
             icon: const Icon(Icons.list),
             label: Text('Visa alla'),
             style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
@@ -168,7 +171,7 @@ class VehicleServiceTab extends ConsumerWidget {
     final partsCount = records.where((r) => r.type == 'parts').length;
 
     return Card(
-      color: Theme.of(context).primaryColor,
+      color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -192,7 +195,7 @@ class VehicleServiceTab extends ConsumerWidget {
                 Container(height: 40, width: 1, color: Colors.grey[300]),
                 _buildSummaryStat(
                   context,
-                  icon: Icons.attach_money,
+                  icon: Icons.payment,
                   label: 'Totalt',
                   value: '${totalCost.toStringAsFixed(0)} kr',
                 ),
@@ -216,9 +219,13 @@ class VehicleServiceTab extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[200])),
       ],
     );
   }

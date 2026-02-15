@@ -144,11 +144,6 @@ class MaintenanceListItem extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Row(
                           children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Colors.grey[500],
-                            ),
                             const SizedBox(width: 2),
                             Expanded(
                               child: Text(
