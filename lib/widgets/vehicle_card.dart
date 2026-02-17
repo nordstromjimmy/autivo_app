@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/vehicle.dart';
+import '../screens/add_vehicle_screen.dart';
 import '../screens/vehicle_details_screen.dart';
 
 class VehicleCard extends StatelessWidget {
@@ -16,6 +17,14 @@ class VehicleCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: InkWell(
+        onLongPress: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddVehicleScreen(existingVehicle: vehicle),
+            ),
+          );
+        },
         onTap: () {
           Navigator.push(
             context,

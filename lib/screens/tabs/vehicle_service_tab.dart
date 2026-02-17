@@ -50,8 +50,7 @@ class VehicleServiceTab extends ConsumerWidget {
                   ),
                 );
               },
-              icon: const Icon(Icons.add),
-              label: const Text('Lägg till service'),
+              label: const Text('Lägg till'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -102,11 +101,6 @@ class VehicleServiceTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Summary card
-        _buildSummaryCard(context, records),
-
-        const SizedBox(height: 16),
-
         // Records list header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,77 +149,6 @@ class VehicleServiceTab extends ConsumerWidget {
             ),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(
-    BuildContext context,
-    List<MaintenanceRecord> records,
-  ) {
-    final totalCost = records
-        .where((r) => r.cost != null)
-        .fold<double>(0, (sum, r) => sum + r.cost!);
-
-    final serviceCount = records.where((r) => r.type == 'service').length;
-    final partsCount = records.where((r) => r.type == 'parts').length;
-
-    return Card(
-      color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildSummaryStat(
-                  context,
-                  icon: Icons.build,
-                  label: 'Service',
-                  value: '$serviceCount',
-                ),
-                Container(height: 40, width: 1, color: Colors.grey[300]),
-                _buildSummaryStat(
-                  context,
-                  icon: Icons.settings,
-                  label: 'Reservdelar',
-                  value: '$partsCount',
-                ),
-                Container(height: 40, width: 1, color: Colors.grey[300]),
-                _buildSummaryStat(
-                  context,
-                  icon: Icons.payment,
-                  label: 'Totalt',
-                  value: '${totalCost.toStringAsFixed(0)} kr',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryStat(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[200])),
       ],
     );
   }

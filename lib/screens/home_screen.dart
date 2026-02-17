@@ -12,7 +12,11 @@ class HomeScreen extends ConsumerWidget {
     final vehicles = ref.watch(vehiclesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mina Fordon'), elevation: 0),
+      appBar: AppBar(
+        title: const Text('Mina Fordon'),
+        elevation: 0,
+        centerTitle: true,
+      ),
       body: vehicles.isEmpty
           ? Center(
               child: Column(

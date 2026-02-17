@@ -15,22 +15,24 @@ class VehicleBesiktningTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Vehicle info card
-          VehicleInfoCard(vehicle: vehicle),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Vehicle info card
+            VehicleInfoCard(vehicle: vehicle),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Besiktning status card
-          BesiktningStatusCard(vehicle: vehicle),
+            // Besiktning status card
+            BesiktningStatusCard(vehicle: vehicle),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Quick actions
-          _buildQuickActions(context),
-        ],
+            // Quick actions
+            _buildQuickActions(context),
+          ],
+        ),
       ),
     );
   }

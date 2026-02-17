@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/maintenance_record.dart';
 import '../providers/maintenance_provider.dart';
 import '../widgets/maintenance_list_item.dart';
+import '../widgets/maintenance_summary_card.dart';
 
 class MaintenanceHistoryScreen extends ConsumerStatefulWidget {
   final String vehicleId;
@@ -117,7 +118,7 @@ class _MaintenanceHistoryScreenState
       body: Column(
         children: [
           // Summary stats
-          _buildSummaryStats(allRecords),
+          buildSummaryStats(context, allRecords),
 
           // Filter chips
           _buildFilterChips(),
@@ -133,97 +134,10 @@ class _MaintenanceHistoryScreenState
     );
   }
 
-  Widget _buildSummaryStats(List<MaintenanceRecord> records) {
-    final totalCost = records
-        .where((r) => r.cost != null)
-        .fold<double>(0, (sum, r) => sum + r.cost!);
-
-    final thisYearRecords = records
-        .where((r) => r.date.year == DateTime.now().year)
-        .toList();
-
-    final thisYearCost = thisYearRecords
-        .where((r) => r.cost != null)
-        .fold<double>(0, (sum, r) => sum + r.cost!);
-
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Sammanfattning',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  context,
-                  'Totalt',
-                  '${records.length}',
-                  'poster',
-                  Icons.list,
-                ),
-                _buildStatItem(
-                  context,
-                  'Total kostnad',
-                  '${totalCost.toStringAsFixed(0)} kr',
-                  'alla tider',
-                  Icons.account_balance_wallet,
-                ),
-                _buildStatItem(
-                  context,
-                  'I år',
-                  '${thisYearCost.toStringAsFixed(0)} kr',
-                  '${thisYearRecords.length} poster',
-                  Icons.calendar_today,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    BuildContext context,
-    String label,
-    String value,
-    String subtitle,
-    IconData icon,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, color: Theme.of(context).primaryColor, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(subtitle, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
-      ],
-    );
-  }
-
   Widget _buildFilterChips() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         children: [
           _buildFilterChip('all', 'Alla', null),
@@ -271,63 +185,44 @@ class _MaintenanceHistoryScreenState
     final sortedKeys = groupedRecords.keys.toList()
       ..sort((a, b) => b.compareTo(a)); // Newest first
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: sortedKeys.length,
-      itemBuilder: (context, index) {
-        final key = sortedKeys[index];
-        final monthRecords = groupedRecords[key]!;
-        final date = monthRecords.first.date;
-        final monthName = _getMonthName(date.month);
+    return SafeArea(
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: sortedKeys.length,
+        itemBuilder: (context, index) {
+          final key = sortedKeys[index];
+          final monthRecords = groupedRecords[key]!;
+          final date = monthRecords.first.date;
+          final monthName = _getMonthName(date.month);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Month header
-            Padding(
-              padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
-              child: Row(
-                children: [
-                  Text(
-                    '$monthName ${date.year}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${monthRecords.length}',
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Month header
+              Padding(
+                padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      '$monthName ${date.year}',
                       style: TextStyle(
-                        fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
+                        fontSize: 16,
+                        color: Colors.grey[700],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            // Records for this month
-            ...monthRecords.map(
-              (record) => MaintenanceListItem(record: record),
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-      },
+              // Records for this month
+              ...monthRecords.map(
+                (record) => MaintenanceListItem(record: record),
+              ),
+              const SizedBox(height: 8),
+            ],
+          );
+        },
+      ),
     );
   }
 

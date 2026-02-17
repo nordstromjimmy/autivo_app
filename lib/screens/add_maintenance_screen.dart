@@ -53,7 +53,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
         text: record.mileage?.toString() ?? '',
       );
       _costController = TextEditingController(
-        text: record.cost?.toString() ?? '',
+        text: record.cost?.toStringAsFixed(0) ?? '',
       );
       _locationController = TextEditingController(text: record.location ?? '');
       _selectedType = record.type;
@@ -166,7 +166,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditMode ? 'Redigera service' : 'Lägg till service'),
+        title: Text(isEditMode ? 'Redigera' : 'Lägg till'),
         actions: isEditMode
             ? [
                 IconButton(
@@ -177,120 +177,122 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
               ]
             : null,
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Type selection
-            Text(
-              'Typ av service',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Column(
-              spacing: 8,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: _maintenanceTypes.map((type) {
-                final isSelected = _selectedType == type['value'];
-                return FilterChip(
-                  selected: isSelected,
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(type['icon'] as IconData, size: 18),
-                      const SizedBox(width: 4),
-                      Text(type['label'] as String),
-                    ],
-                  ),
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedType = type['value'] as String;
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Type selection
+              Text(
+                'Typ av service',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Column(
+                spacing: 8,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _maintenanceTypes.map((type) {
+                  final isSelected = _selectedType == type['value'];
+                  return FilterChip(
+                    selected: isSelected,
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(type['icon'] as IconData, size: 18),
+                        const SizedBox(width: 4),
+                        Text(type['label'] as String),
+                      ],
+                    ),
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedType = type['value'] as String;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
 
-            // Description
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Beskrivning *',
-                hintText: 'T.ex. "Oljebyte och filter"',
+              // Description
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Beskrivning *',
+                  hintText: 'T.ex. "Oljebyte och filter"',
+                ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Ange beskrivning';
+                  }
+                  return null;
+                },
               ),
-              maxLines: 2,
-              textCapitalization: TextCapitalization.sentences,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Ange beskrivning';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Date
-            InkWell(
-              onTap: _selectDate,
-              child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'Datum'),
-                child: Text(_formatDate(_selectedDate)),
+              // Date
+              InkWell(
+                onTap: _selectDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(labelText: 'Datum'),
+                  child: Text(_formatDate(_selectedDate)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Mileage
-            TextFormField(
-              controller: _mileageController,
-              decoration: const InputDecoration(
-                labelText: 'Mätarställning',
-                hintText: '15000',
-                suffixText: 'km',
+              // Mileage
+              TextFormField(
+                controller: _mileageController,
+                decoration: const InputDecoration(
+                  labelText: 'Mätarställning',
+                  hintText: '15000',
+                  suffixText: 'km',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Location
-            TextFormField(
-              controller: _locationController,
-              decoration: const InputDecoration(
-                labelText: 'Plats/Verkstad',
-                hintText: 'T.ex. "Biltema Stockholm"',
+              // Location
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Plats/Verkstad',
+                  hintText: 'T.ex. "Biltema Stockholm"',
+                ),
+                textCapitalization: TextCapitalization.words,
               ),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Cost
-            TextFormField(
-              controller: _costController,
-              decoration: const InputDecoration(
-                labelText: 'Kostnad',
-                hintText: '2500',
-                suffixText: 'kr',
+              // Cost
+              TextFormField(
+                controller: _costController,
+                decoration: const InputDecoration(
+                  labelText: 'Kostnad',
+                  hintText: '2500',
+                  suffixText: 'kr',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
               ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Save button
-            ElevatedButton(
-              onPressed: _saveRecord,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              // Save button
+              ElevatedButton(
+                onPressed: _saveRecord,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text(isEditMode ? 'Uppdatera' : 'Spara'),
               ),
-              child: Text(isEditMode ? 'Uppdatera' : 'Spara'),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
