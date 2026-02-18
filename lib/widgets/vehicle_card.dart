@@ -12,6 +12,7 @@ class VehicleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final daysUntil = vehicle.daysUntilBesiktning;
     final urgencyColor = _getUrgencyColor(vehicle.urgencyLevel);
+    final hasInspectionDate = vehicle.nextBesiktningDate != null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -66,13 +67,26 @@ class VehicleCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: urgencyColor.withValues(alpha: 0.1),
+                  color: hasInspectionDate
+                      ? urgencyColor.withValues(alpha: 0.1)
+                      : Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: urgencyColor, width: 1.5),
+                  border: Border.all(
+                    color: hasInspectionDate ? urgencyColor : Colors.grey[300]!,
+                    width: 1.5,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, color: urgencyColor, size: 20),
+                    Icon(
+                      hasInspectionDate
+                          ? Icons.calendar_today
+                          : Icons.event_busy,
+                      color: hasInspectionDate
+                          ? urgencyColor
+                          : Colors.grey[400],
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -87,23 +101,34 @@ class VehicleCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            _formatDate(vehicle.nextBesiktningDate),
+                            hasInspectionDate
+                                ? _formatDate(vehicle.nextBesiktningDate!)
+                                : 'Ange ett datum för att visa',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: urgencyColor,
+                              color: hasInspectionDate
+                                  ? urgencyColor
+                                  : Colors.grey[600],
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Text(
-                      daysUntil >= 0 ? '$daysUntil dagar' : 'Försenad!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: urgencyColor,
+                    if (hasInspectionDate)
+                      Text(
+                        daysUntil >= 0 ? '$daysUntil dagar' : 'Försenad!',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: urgencyColor,
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey[400],
+                        size: 20,
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -122,6 +147,8 @@ class VehicleCard extends StatelessWidget {
         return Colors.orange;
       case 'warning':
         return Colors.amber;
+      case 'none':
+        return Colors.grey;
       default:
         return Colors.green;
     }

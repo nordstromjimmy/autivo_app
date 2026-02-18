@@ -72,7 +72,7 @@ class BesiktningChecklistScreen extends ConsumerWidget {
       margin: const EdgeInsets.all(16),
       color: isComplete
           ? Colors.green.withValues(alpha: 0.9)
-          : Theme.of(context).primaryColor.withValues(alpha: 0.7),
+          : Colors.blueAccent.withValues(alpha: 0.8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

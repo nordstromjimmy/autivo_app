@@ -24,7 +24,7 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       year: fields[4] as int,
       fuelType: fields[5] as String?,
       engineSize: fields[6] as String?,
-      nextBesiktningDate: fields[7] as DateTime,
+      nextBesiktningDate: fields[7] as DateTime?,
       createdAt: fields[8] as DateTime?,
       verificationLevel: fields[9] as String,
       verifiedAt: fields[10] as DateTime?,

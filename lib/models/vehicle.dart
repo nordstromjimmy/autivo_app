@@ -26,7 +26,7 @@ class Vehicle extends HiveObject {
   String? engineSize;
 
   @HiveField(7)
-  DateTime nextBesiktningDate;
+  DateTime? nextBesiktningDate;
 
   @HiveField(8)
   DateTime createdAt;
@@ -68,7 +68,7 @@ class Vehicle extends HiveObject {
     required this.year,
     this.fuelType,
     this.engineSize,
-    required this.nextBesiktningDate,
+    this.nextBesiktningDate,
     DateTime? createdAt,
     this.verificationLevel = 'none',
     this.verifiedAt,
@@ -83,13 +83,24 @@ class Vehicle extends HiveObject {
 
   // Getters
   int get daysUntilBesiktning {
-    return nextBesiktningDate.difference(DateTime.now()).inDays;
+    if (nextBesiktningDate == null) {
+      return 0; // or return a large number like 999
+    }
+    return nextBesiktningDate!.difference(DateTime.now()).inDays;
   }
 
-  bool get isBesiktningUrgent => daysUntilBesiktning <= 30;
-  bool get isBesiktningOverdue => daysUntilBesiktning < 0;
+  bool get isBesiktningUrgent {
+    if (nextBesiktningDate == null) return false;
+    return daysUntilBesiktning <= 30;
+  }
+
+  bool get isBesiktningOverdue {
+    if (nextBesiktningDate == null) return false;
+    return daysUntilBesiktning < 0;
+  }
 
   String get urgencyLevel {
+    if (nextBesiktningDate == null) return 'none';
     if (daysUntilBesiktning < 0) return 'overdue';
     if (daysUntilBesiktning <= 7) return 'critical';
     if (daysUntilBesiktning <= 30) return 'warning';

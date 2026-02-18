@@ -80,7 +80,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   }
 
   void _saveVehicle() {
-    if (_formKey.currentState!.validate() && _nextBesiktningDate != null) {
+    if (_formKey.currentState!.validate()) {
+      // Remove nextBesiktningDate check
       final vehicle = Vehicle(
         id: isEditMode ? widget.existingVehicle!.id : const Uuid().v4(),
         registrationNumber: _regNumberController.text.toUpperCase().trim(),
@@ -91,10 +92,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
         engineSize: _engineSizeController.text.isNotEmpty
             ? _engineSizeController.text.trim()
             : null,
-        nextBesiktningDate: _nextBesiktningDate!,
-        createdAt: isEditMode
-            ? widget.existingVehicle!.createdAt
-            : null, // Preserve original createdAt when editing
+        nextBesiktningDate: _nextBesiktningDate, // Can be null now
+        createdAt: isEditMode ? widget.existingVehicle!.createdAt : null,
       );
 
       if (isEditMode) {
@@ -136,15 +135,15 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     );
 
     if (confirm == true && mounted) {
-      ref
-          .read(vehiclesProvider.notifier)
-          .deleteVehicle(widget.existingVehicle!.id);
-      // Pop twice - once for dialog, once for edit screen, once for details screen
-      Navigator.pop(context); // Close edit screen
-      Navigator.pop(context); // Close details screen
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Fordon borttaget')));
+      final vehicleId = widget.existingVehicle!.id;
+
+      // Navigate away first
+      Navigator.of(context).pop(); // Close edit screen
+
+      // Delete after navigation completes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(vehiclesProvider.notifier).deleteVehicle(vehicleId);
+      });
     }
   }
 
@@ -267,22 +266,18 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
             InkWell(
               onTap: _selectDate,
               child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Nästa besiktning *',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.event),
-                  errorText:
-                      _nextBesiktningDate == null &&
-                          _formKey.currentState?.validate() == false
-                      ? 'Välj datum'
-                      : null,
+                decoration: const InputDecoration(
+                  labelText:
+                      'Nästa besiktning', // Remove the * to indicate optional
+                  prefixIcon: Icon(Icons.event),
+                  // Remove errorText since it's now optional
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       _nextBesiktningDate == null
-                          ? 'Välj datum'
+                          ? 'Välj datum (valfritt)'
                           : '${_nextBesiktningDate!.day}/${_nextBesiktningDate!.month} ${_nextBesiktningDate!.year}',
                       style: TextStyle(
                         color: _nextBesiktningDate == null

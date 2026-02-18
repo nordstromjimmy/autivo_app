@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/vehicle.dart';
+import '../screens/add_vehicle_screen.dart';
 
 class BesiktningStatusCard extends StatelessWidget {
   final Vehicle vehicle;
@@ -8,6 +9,11 @@ class BesiktningStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Handle null date case
+    if (vehicle.nextBesiktningDate == null) {
+      return _buildEmptyStateCard(context);
+    }
+
     final daysUntil = vehicle.daysUntilBesiktning;
     final urgencyColor = _getUrgencyColor(vehicle.urgencyLevel);
 
@@ -40,7 +46,7 @@ class BesiktningStatusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _formatDate(vehicle.nextBesiktningDate),
+                      _formatDate(vehicle.nextBesiktningDate!),
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -49,7 +55,7 @@ class BesiktningStatusCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _getWeekdayName(vehicle.nextBesiktningDate),
+                      _getWeekdayName(vehicle.nextBesiktningDate!),
                       style: TextStyle(color: Colors.grey[200]),
                     ),
                   ],
@@ -108,6 +114,54 @@ class BesiktningStatusCard extends StatelessWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Empty state when no date is set
+  Widget _buildEmptyStateCard(BuildContext context) {
+    return Card(
+      color: Colors.grey[100],
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(Icons.event_busy, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text(
+              'Inget besiktningsdatum angivet',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Lägg till datum för att se när din nästa besiktning är',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddVehicleScreen(existingVehicle: vehicle),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Lägg till datum'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Theme.of(context).primaryColor,
+              ),
+            ),
           ],
         ),
       ),

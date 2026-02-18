@@ -11,12 +11,27 @@ class VehicleDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vehicle = ref
-        .watch(vehiclesProvider)
-        .firstWhere(
-          (v) => v.id == vehicleId,
-          orElse: () => throw Exception('Vehicle not found'),
-        );
+    final vehicles = ref.watch(vehiclesProvider);
+
+    // Try to find the vehicle
+    final vehicleIndex = vehicles.indexWhere((v) => v.id == vehicleId);
+
+    // If vehicle doesn't exist (was deleted), close this screen
+    if (vehicleIndex == -1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Fordon borttaget')));
+        }
+      });
+
+      // Return empty scaffold while closing
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final vehicle = vehicles[vehicleIndex];
 
     return DefaultTabController(
       length: 2,
