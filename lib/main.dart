@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/checklist_state.dart';
 import 'models/vehicle.dart';
@@ -34,8 +35,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Besiktningsappen',
+      title: 'Autivo',
       theme: AppTheme.lightTheme,
+      locale: const Locale('sv', 'SE'),
+      supportedLocales: const [
+        Locale('sv', 'SE'),
+        Locale('en', 'US'), // English (fallback)
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const HomeScreen(),
       debugShowCheckedModeBanner: false,
     );

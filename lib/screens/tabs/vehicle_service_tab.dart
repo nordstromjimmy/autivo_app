@@ -133,8 +133,7 @@ class VehicleServiceTab extends ConsumerWidget {
                 MaterialPageRoute(
                   builder: (context) => MaintenanceHistoryScreen(
                     vehicleId: vehicle.id,
-                    vehicleName:
-                        '${vehicle.make} ${vehicle.model} (${vehicle.registrationNumber})',
+                    vehicleName: '${vehicle.make} ${vehicle.model}',
                   ),
                 ),
               );

@@ -32,11 +32,30 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
   late DateTime _selectedDate;
 
   final List<Map<String, dynamic>> _maintenanceTypes = [
-    {'value': 'service', 'label': 'Service', 'icon': Icons.build},
-    {'value': 'parts', 'label': 'Reservdel', 'icon': Icons.settings},
-    /*     {'value': 'tire_change', 'label': 'Däckbyte', 'icon': Icons.album}, */
-    {'value': 'besiktning', 'label': 'Besiktning', 'icon': Icons.verified},
-    {'value': 'other', 'label': 'Annat', 'icon': Icons.description},
+    {
+      'value': 'service',
+      'label': 'Service',
+      'icon': Icons.build,
+      'color': Colors.blue,
+    },
+    {
+      'value': 'parts',
+      'label': 'Reservdel',
+      'icon': Icons.settings,
+      'color': Colors.orange,
+    },
+    {
+      'value': 'besiktning',
+      'label': 'Besiktning',
+      'icon': Icons.verified,
+      'color': Colors.green,
+    },
+    {
+      'value': 'other',
+      'label': 'Annat',
+      'icon': Icons.description,
+      'color': Colors.grey,
+    },
   ];
 
   bool get isEditMode => widget.existingRecord != null;
@@ -77,6 +96,13 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
     super.dispose();
   }
 
+  /*   Color get _selectedTypeColor {
+    final type = _maintenanceTypes.firstWhere(
+      (t) => t['value'] == _selectedType,
+    );
+    return type['color'] as Color;
+  } */
+
   Future<void> _selectDate() async {
     final date = await showDatePicker(
       context: context,
@@ -114,7 +140,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
       ref.read(maintenanceNotifierProvider.notifier).addRecord(record);
       Navigator.pop(context);
 
-      // Clear any existing snackbars before showing new one
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -151,7 +176,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
           .deleteRecord(widget.existingRecord!.id);
       Navigator.pop(context);
 
-      // Clear any existing snackbars before showing new one
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -177,128 +201,296 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
               ]
             : null,
       ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Type selection
-              Text(
-                'Typ av service',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              Column(
-                spacing: 8,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _maintenanceTypes.map((type) {
-                  final isSelected = _selectedType == type['value'];
-                  return FilterChip(
-                    selected: isSelected,
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Type selection card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(type['icon'] as IconData, size: 18),
-                        const SizedBox(width: 4),
-                        Text(type['label'] as String),
+                        Icon(
+                          Icons.category,
+                          size: 20,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Typ av underhåll',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedType = type['value'] as String;
-                      });
-                    },
-                  );
-                }).toList(),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _maintenanceTypes.map((type) {
+                        final isSelected = _selectedType == type['value'];
+                        final color = type['color'] as Color;
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedType = type['value'] as String;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? color.withOpacity(0.15)
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? color : Colors.grey[300]!,
+                                width: isSelected ? 2 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  type['icon'] as IconData,
+                                  size: 20,
+                                  color: isSelected ? color : Colors.grey[600],
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  type['label'] as String,
+                                  style: TextStyle(
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? color
+                                        : Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
+            ),
 
-              // Description
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Beskrivning *',
-                  hintText: 'T.ex. "Oljebyte och filter"',
+            const SizedBox(height: 16),
+
+            // Details card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.edit_note,
+                          size: 20,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Detaljer',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Description
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Beskrivning *',
+                        hintText: 'T.ex. "Oljebyte och filter"',
+                        prefixIcon: Icon(Icons.description),
+                      ),
+                      maxLines: 2,
+                      textCapitalization: TextCapitalization.sentences,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ange beskrivning';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Date
+                    InkWell(
+                      onTap: _selectDate,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Datum',
+                          prefixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(_formatDate(_selectedDate)),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.grey[600],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Location
+                    TextFormField(
+                      controller: _locationController,
+                      decoration: const InputDecoration(
+                        labelText: 'Plats/Verkstad',
+                        hintText: 'T.ex. "Biltema Stockholm"',
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ],
                 ),
-                maxLines: 2,
-                textCapitalization: TextCapitalization.sentences,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ange beskrivning';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 16),
+            ),
 
-              // Date
-              InkWell(
-                onTap: _selectDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Datum'),
-                  child: Text(_formatDate(_selectedDate)),
+            const SizedBox(height: 16),
+
+            // Numbers card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.numbers,
+                          size: 20,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Siffror',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        // Mileage
+                        Expanded(
+                          child: TextFormField(
+                            controller: _mileageController,
+                            decoration: const InputDecoration(
+                              labelText: 'Mätarställning',
+                              hintText: '15000',
+                              suffixText: 'km',
+                              prefixIcon: Icon(Icons.speed),
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+
+                        // Cost
+                        Expanded(
+                          child: TextFormField(
+                            controller: _costController,
+                            decoration: const InputDecoration(
+                              labelText: 'Kostnad',
+                              hintText: '2500',
+                              suffixText: 'kr',
+                              prefixIcon: Icon(Icons.payments),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d+\.?\d{0,2}'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+            ),
 
-              // Mileage
-              TextFormField(
-                controller: _mileageController,
-                decoration: const InputDecoration(
-                  labelText: 'Mätarställning',
-                  hintText: '15000',
-                  suffixText: 'km',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            const SizedBox(height: 24),
+
+            // Save button with animated color based on selected type
+            ElevatedButton(
+              onPressed: _saveRecord,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              const SizedBox(height: 16),
-
-              // Location
-              TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Plats/Verkstad',
-                  hintText: 'T.ex. "Biltema Stockholm"',
-                ),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 16),
-
-              // Cost
-              TextFormField(
-                controller: _costController,
-                decoration: const InputDecoration(
-                  labelText: 'Kostnad',
-                  hintText: '2500',
-                  suffixText: 'kr',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 8),
+                  Text(
+                    isEditMode ? 'Uppdatera' : 'Spara',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 24),
+            ),
 
-              // Save button
-              ElevatedButton(
-                onPressed: _saveRecord,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text(isEditMode ? 'Uppdatera' : 'Spara'),
-              ),
-            ],
-          ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month} ${date.year}';
+    const months = [
+      'jan',
+      'feb',
+      'mar',
+      'apr',
+      'maj',
+      'jun',
+      'jul',
+      'aug',
+      'sep',
+      'okt',
+      'nov',
+      'dec',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }

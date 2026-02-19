@@ -20,15 +20,18 @@ Widget buildSummaryStats(
   return Card(
     margin: const EdgeInsets.all(16),
     child: Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Sammanfattning',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          Align(
+            alignment: AlignmentGeometry.center,
+            child: Text(
+              'Sammanfattning',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
