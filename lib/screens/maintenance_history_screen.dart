@@ -24,6 +24,7 @@ class _MaintenanceHistoryScreenState
     extends ConsumerState<MaintenanceHistoryScreen> {
   String _filterType = 'all';
   String _sortBy = 'date_desc'; // date_desc, date_asc, cost_desc, cost_asc
+  bool _isFilterExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,67 +48,32 @@ class _MaintenanceHistoryScreenState
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.sort),
-            tooltip: 'Sortera',
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Fler alternativ',
             onSelected: (value) {
-              setState(() {
-                _sortBy = value;
-              });
+              if (value == 'export_pdf') {
+                _exportPDF();
+              }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'date_desc',
+              const PopupMenuItem(
+                value: 'export_pdf',
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: _sortBy == 'date_desc' ? Colors.blue : null,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Nyast först'),
+                    Icon(Icons.picture_as_pdf, size: 20),
+                    SizedBox(width: 12),
+                    Text('Exportera PDF'),
                   ],
                 ),
               ),
-              PopupMenuItem(
-                value: 'date_asc',
+              // Placeholder for future features
+              const PopupMenuItem(
+                enabled: false,
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: _sortBy == 'date_asc' ? Colors.blue : null,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Äldst först'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'cost_desc',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.attach_money,
-                      size: 20,
-                      color: _sortBy == 'cost_desc' ? Colors.blue : null,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Högst kostnad'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'cost_asc',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.attach_money,
-                      size: 20,
-                      color: _sortBy == 'cost_asc' ? Colors.blue : null,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Lägst kostnad'),
+                    Icon(Icons.share, size: 20, color: Colors.grey),
+                    SizedBox(width: 12),
+                    Text('Dela historik', style: TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),
@@ -117,11 +83,11 @@ class _MaintenanceHistoryScreenState
       ),
       body: Column(
         children: [
-          // Summary stats
+          // Summary stats with export button
           buildSummaryStats(context, allRecords),
 
-          // Filter chips
-          _buildFilterChips(),
+          // Filter and sort controls
+          _buildFilterAndSortControls(),
 
           // Records list
           Expanded(
@@ -134,21 +100,216 @@ class _MaintenanceHistoryScreenState
     );
   }
 
-  Widget _buildFilterChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Row(
+  Widget _buildFilterAndSortControls() {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
         children: [
-          _buildFilterChip('all', 'Alla', null),
-          const SizedBox(width: 8),
-          _buildFilterChip('service', 'Service', Icons.build),
-          const SizedBox(width: 8),
-          _buildFilterChip('parts', 'Reservdelar', Icons.settings),
-          const SizedBox(width: 8),
-          _buildFilterChip('besiktning', 'Besiktning', Icons.verified),
-          const SizedBox(width: 8),
-          _buildFilterChip('other', 'Annat', Icons.description),
+          // Header - always visible
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isFilterExpanded = !_isFilterExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.tune,
+                    size: 20,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Filter & Sortering',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Show active filters count
+                  if (_filterType != 'all' || _sortBy != 'date_desc')
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _filterType != 'all' ? '1' : '•',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  Icon(
+                    _isFilterExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: Colors.grey[600],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expandable content
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+
+                  // Filter chips
+                  Row(
+                    children: [
+                      Text(
+                        'Filter:',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildFilterChip('all', 'Alla', null),
+                              const SizedBox(width: 8),
+                              _buildFilterChip(
+                                'service',
+                                'Service',
+                                Icons.build,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildFilterChip(
+                                'parts',
+                                'Reservdelar',
+                                Icons.settings,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildFilterChip(
+                                'besiktning',
+                                'Besiktning',
+                                Icons.verified,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildFilterChip(
+                                'other',
+                                'Annat',
+                                Icons.description,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Sort dropdown
+                  Row(
+                    children: [
+                      Text(
+                        'Sortera:',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButton<String>(
+                            value: _sortBy,
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            icon: const Icon(Icons.arrow_drop_down),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _sortBy = value;
+                                });
+                              }
+                            },
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'date_desc',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Nyast först'),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'date_asc',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Äldst först'),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'cost_desc',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.trending_down, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Högst kostnad'),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'cost_asc',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.trending_up, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Lägst kostnad'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            crossFadeState: _isFilterExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
         ],
       ),
     );
@@ -185,44 +346,42 @@ class _MaintenanceHistoryScreenState
     final sortedKeys = groupedRecords.keys.toList()
       ..sort((a, b) => b.compareTo(a)); // Newest first
 
-    return SafeArea(
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: sortedKeys.length,
-        itemBuilder: (context, index) {
-          final key = sortedKeys[index];
-          final monthRecords = groupedRecords[key]!;
-          final date = monthRecords.first.date;
-          final monthName = _getMonthName(date.month);
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: sortedKeys.length,
+      itemBuilder: (context, index) {
+        final key = sortedKeys[index];
+        final monthRecords = groupedRecords[key]!;
+        final date = monthRecords.first.date;
+        final monthName = _getMonthName(date.month);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Month header
-              Padding(
-                padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
-                child: Row(
-                  children: [
-                    Text(
-                      '$monthName ${date.year}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.grey[700],
-                      ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Month header
+            Padding(
+              padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
+              child: Row(
+                children: [
+                  Text(
+                    '$monthName ${date.year}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.grey[700],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              // Records for this month
-              ...monthRecords.map(
-                (record) => MaintenanceListItem(record: record),
-              ),
-              const SizedBox(height: 8),
-            ],
-          );
-        },
-      ),
+            ),
+            // Records for this month
+            ...monthRecords.map(
+              (record) => MaintenanceListItem(record: record),
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
     );
   }
 
@@ -286,6 +445,16 @@ class _MaintenanceHistoryScreenState
     }
 
     return filtered;
+  }
+
+  void _exportPDF() {
+    // TODO: Implement PDF export
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('PDF export - implementeras snart!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   String _getMonthName(int month) {

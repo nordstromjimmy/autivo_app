@@ -290,15 +290,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-
-            ElevatedButton(
-              onPressed: _saveVehicle,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text(isEditMode ? 'Uppdatera fordon' : 'Spara fordon'),
-            ),
 
             if (isEditMode) ...[
               const SizedBox(height: 16),
@@ -315,6 +306,14 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _saveVehicle,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: Text(isEditMode ? 'Uppdatera fordon' : 'Spara fordon'),
+            ),
           ],
         ),
       ),

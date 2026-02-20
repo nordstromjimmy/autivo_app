@@ -189,219 +189,210 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditMode ? 'Redigera' : 'Lägg till'),
-        actions: isEditMode
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  color: Colors.red,
-                  onPressed: _deleteRecord,
-                ),
-              ]
-            : null,
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Type selection card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.category,
-                          size: 20,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Typ av underhåll',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _maintenanceTypes.map((type) {
-                        final isSelected = _selectedType == type['value'];
-                        final color = type['color'] as Color;
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              _selectedType = type['value'] as String;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? color.withOpacity(0.15)
-                                  : Colors.grey[100],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected ? color : Colors.grey[300]!,
-                                width: isSelected ? 2 : 1,
+      appBar: AppBar(title: Text(isEditMode ? 'Redigera' : 'Lägg till')),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Type selection card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.category,
+                            size: 20,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Typ av underhåll',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _maintenanceTypes.map((type) {
+                          final isSelected = _selectedType == type['value'];
+                          final color = type['color'] as Color;
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedType = type['value'] as String;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  type['icon'] as IconData,
-                                  size: 20,
-                                  color: isSelected ? color : Colors.grey[600],
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? color.withValues(alpha: 0.15)
+                                    : Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected ? color : Colors.grey[300]!,
+                                  width: isSelected ? 2 : 1,
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  type['label'] as String,
-                                  style: TextStyle(
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    type['icon'] as IconData,
+                                    size: 20,
                                     color: isSelected
                                         ? color
-                                        : Colors.grey[700],
+                                        : Colors.grey[600],
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    type['label'] as String,
+                                    style: TextStyle(
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                      color: isSelected
+                                          ? color
+                                          : Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Details card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.edit_note,
+                            size: 20,
+                            color: Theme.of(context).primaryColor,
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Details card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.edit_note,
-                          size: 20,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Detaljer',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Beskrivning *',
-                        hintText: 'T.ex. "Oljebyte och filter"',
-                        prefixIcon: Icon(Icons.description),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Detaljer',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
-                      maxLines: 2,
-                      textCapitalization: TextCapitalization.sentences,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ange beskrivning';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Date
-                    InkWell(
-                      onTap: _selectDate,
-                      borderRadius: BorderRadius.circular(12),
-                      child: InputDecorator(
+                      // Description
+                      TextFormField(
+                        controller: _descriptionController,
                         decoration: const InputDecoration(
-                          labelText: 'Datum',
-                          prefixIcon: Icon(Icons.calendar_today),
+                          labelText: 'Beskrivning *',
+                          hintText: 'T.ex. "Oljebyte och filter"',
+                          prefixIcon: Icon(Icons.description),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(_formatDate(_selectedDate)),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.grey[600],
-                            ),
-                          ],
-                        ),
+                        maxLines: 2,
+                        textCapitalization: TextCapitalization.sentences,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Ange beskrivning';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Location
-                    TextFormField(
-                      controller: _locationController,
-                      decoration: const InputDecoration(
-                        labelText: 'Plats/Verkstad',
-                        hintText: 'T.ex. "Biltema Stockholm"',
-                        prefixIcon: Icon(Icons.location_on),
+                      // Date
+                      InkWell(
+                        onTap: _selectDate,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Datum',
+                            prefixIcon: Icon(Icons.calendar_today),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(_formatDate(_selectedDate)),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.grey[600],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+
+                      // Location
+                      TextFormField(
+                        controller: _locationController,
+                        decoration: const InputDecoration(
+                          labelText: 'Plats/Verkstad',
+                          hintText: 'T.ex. "Biltema Stockholm"',
+                          prefixIcon: Icon(Icons.location_on),
+                        ),
+                        textCapitalization: TextCapitalization.words,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Numbers card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.numbers,
-                          size: 20,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Siffror',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+              // Numbers card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.numbers,
+                            size: 20,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Siffror',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
-                    Row(
-                      children: [
-                        // Mileage
-                        Expanded(
-                          child: TextFormField(
+                      Column(
+                        children: [
+                          // Mileage
+                          TextFormField(
                             controller: _mileageController,
                             decoration: const InputDecoration(
                               labelText: 'Mätarställning',
@@ -414,12 +405,11 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 16),
 
-                        // Cost
-                        Expanded(
-                          child: TextFormField(
+                          const SizedBox(height: 16),
+
+                          // Cost
+                          TextFormField(
                             controller: _costController,
                             decoration: const InputDecoration(
                               labelText: 'Kostnad',
@@ -436,41 +426,56 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                               ),
                             ],
                           ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              isEditMode
+                  ? OutlinedButton.icon(
+                      onPressed: _deleteRecord,
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Ta bort'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadiusGeometry.circular(12),
                         ),
-                      ],
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    )
+                  : const SizedBox(height: 14),
+              const SizedBox(height: 14),
+              // Save button with animated color based on selected type
+              ElevatedButton(
+                onPressed: _saveRecord,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(width: 8),
+                    Text(
+                      isEditMode ? 'Uppdatera' : 'Spara',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
 
-            const SizedBox(height: 24),
-
-            // Save button with animated color based on selected type
-            ElevatedButton(
-              onPressed: _saveRecord,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(width: 8),
-                  Text(
-                    isEditMode ? 'Uppdatera' : 'Spara',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
