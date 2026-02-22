@@ -22,7 +22,7 @@ class VehicleInfoCard extends StatelessWidget {
                 Icon(
                   Icons.directions_car,
                   size: 48,
-                  color: Theme.of(context).primaryColor,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -92,7 +92,7 @@ class VehicleInfoCard extends StatelessWidget {
                       ? _getVerificationColor(
                           vehicle.verificationLevel,
                         ).withValues(alpha: 0.1)
-                      : Colors.grey[100],
+                      : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: vehicle.isVerified

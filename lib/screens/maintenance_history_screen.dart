@@ -243,7 +243,7 @@ class _MaintenanceHistoryScreenState
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.grey[300]!),
                           ),

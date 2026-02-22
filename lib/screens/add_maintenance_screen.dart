@@ -265,7 +265,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                                           ? FontWeight.w600
                                           : FontWeight.normal,
                                       color: isSelected
-                                          ? color
+                                          ? Colors.grey[700]
                                           : Colors.grey[700],
                                     ),
                                   ),

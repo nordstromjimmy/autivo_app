@@ -361,7 +361,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                         style: TextStyle(
                           color: _nextBesiktningDate == null
                               ? Colors.grey
-                              : Colors.black,
+                              : Colors.grey,
                         ),
                       ),
                       const Icon(Icons.calendar_today),

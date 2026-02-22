@@ -18,26 +18,28 @@ class HomeScreen extends ConsumerWidget {
         centerTitle: true,
       ),
       body: vehicles.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.directions_car_outlined,
-                    size: 80,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Inga fordon tillagda',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tryck på + för att lägga till ditt första fordon',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ],
+          ? SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.directions_car_outlined,
+                      size: 80,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Inga fordon tillagda',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tryck på + för att lägga till ditt första fordon',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ),
             )
           : ListView.builder(
