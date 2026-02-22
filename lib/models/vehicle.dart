@@ -60,6 +60,9 @@ class Vehicle extends HiveObject {
   @HiveField(17)
   bool receivedViaTransfer; // Was this transferred from another user?
 
+  @HiveField(18)
+  int? currentMileage;
+
   Vehicle({
     required this.id,
     required this.registrationNumber,
@@ -79,6 +82,7 @@ class Vehicle extends HiveObject {
     this.transferCode,
     this.previousOwnerId,
     this.receivedViaTransfer = false,
+    this.currentMileage,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Getters

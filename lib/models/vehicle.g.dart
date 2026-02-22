@@ -35,13 +35,14 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       transferCode: fields[15] as String?,
       previousOwnerId: fields[16] as String?,
       receivedViaTransfer: fields[17] as bool,
+      currentMileage: fields[18] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Vehicle obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -77,7 +78,9 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       ..writeByte(16)
       ..write(obj.previousOwnerId)
       ..writeByte(17)
-      ..write(obj.receivedViaTransfer);
+      ..write(obj.receivedViaTransfer)
+      ..writeByte(18)
+      ..write(obj.currentMileage);
   }
 
   @override

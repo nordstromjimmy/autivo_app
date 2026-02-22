@@ -289,21 +289,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.edit_note,
-                            size: 20,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Detaljer',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 16),
 
                       // Description
@@ -372,23 +357,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.numbers,
-                            size: 20,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Siffror',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 16),
-
                       Column(
                         children: [
                           // Mileage

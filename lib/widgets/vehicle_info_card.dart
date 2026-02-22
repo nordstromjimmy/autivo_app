@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/vehicle.dart';
+import '../screens/add_vehicle_screen.dart';
 import '../screens/vehicle_verification_screen.dart';
 
 class VehicleInfoCard extends StatelessWidget {
@@ -45,6 +46,20 @@ class VehicleInfoCard extends StatelessWidget {
                               ),
                             ),
                           ],
+                          Spacer(),
+                          IconButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddVehicleScreen(
+                                    existingVehicle: vehicle,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.settings),
+                          ),
                         ],
                       ),
                       Text(
@@ -143,10 +158,8 @@ class VehicleInfoCard extends StatelessWidget {
                 _buildInfoColumn('År', vehicle.year.toString()),
                 if (vehicle.fuelType != null)
                   _buildInfoColumn('Bränsle', vehicle.fuelType!),
-                _buildInfoColumn(
-                  'Besiktning',
-                  '${vehicle.daysUntilBesiktning} dagar',
-                ),
+                if (vehicle.currentMileage != null)
+                  _buildInfoColumn('Mätarst.', '${vehicle.currentMileage} km'),
               ],
             ),
           ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/maintenance_record.dart';
 import '../providers/maintenance_provider.dart';
+import '../providers/vehicle_provider.dart';
+import '../services/pdf_export_service.dart';
 import '../widgets/maintenance_list_item.dart';
 import '../widgets/maintenance_summary_card.dart';
 
@@ -138,10 +140,12 @@ class _MaintenanceHistoryScreenState
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        _filterType != 'all' ? '1' : '•',
+                        _filterType != 'all' || _sortBy != 'date_desc'
+                            ? '1'
+                            : '',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -447,14 +451,72 @@ class _MaintenanceHistoryScreenState
     return filtered;
   }
 
-  void _exportPDF() {
-    // TODO: Implement PDF export
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('PDF export - implementeras snart!'),
-        duration: Duration(seconds: 2),
+  void _exportPDF() async {
+    // Get vehicle info
+    final vehicle = ref
+        .read(vehiclesProvider)
+        .firstWhere((v) => v.id == widget.vehicleId);
+
+    final records = ref.read(maintenanceProvider(widget.vehicleId));
+
+    if (records.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ingen servicehistorik att exportera'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Skapar PDF...'),
+              ],
+            ),
+          ),
+        ),
       ),
     );
+
+    try {
+      // Generate PDF
+      final pdfFile = await PdfExportService.generateMaintenancePDF(
+        vehicle: vehicle,
+        records: records,
+      );
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Share PDF
+      await PdfExportService.sharePDF(pdfFile);
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fel vid PDF-export: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   String _getMonthName(int month) {
