@@ -428,6 +428,9 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     )
                   : const SizedBox(height: 14),

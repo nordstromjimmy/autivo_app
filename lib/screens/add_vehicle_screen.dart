@@ -397,16 +397,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Save button
-              ElevatedButton(
-                onPressed: _saveVehicle,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text(isEditMode ? 'Uppdatera fordon' : 'Spara fordon'),
-              ),
+              const SizedBox(height: 16),
 
               // Delete button (only in edit mode)
               if (isEditMode) ...[
@@ -415,12 +406,25 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                   onPressed: _deleteVehicle,
                   icon: const Icon(Icons.delete),
                   label: const Text('Ta bort fordon'),
+
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
+              const SizedBox(height: 16),
+              // Save button
+              ElevatedButton(
+                onPressed: _saveVehicle,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text(isEditMode ? 'Uppdatera fordon' : 'Spara fordon'),
+              ),
             ],
           ),
         ),

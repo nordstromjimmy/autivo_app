@@ -10,6 +10,7 @@ class AppTheme {
         surface: Colors.white,
         brightness: Brightness.light,
         secondary: Colors.white,
+        onSurface: Colors.grey[800],
       ),
       appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
       cardTheme: CardThemeData(
@@ -100,6 +101,7 @@ class AppTheme {
         primary: const Color(0xFF64B5F6), // Lighter blue for dark mode
         surface: const Color(0xFF1E1E1E), // Dark surface
         secondary: const Color(0xFF2C2C2C),
+        onSurface: Colors.grey[200],
       ),
       scaffoldBackgroundColor: const Color(0xFF121212),
       appBarTheme: const AppBarTheme(

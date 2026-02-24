@@ -18,7 +18,6 @@ class BesiktningStatusCard extends StatelessWidget {
     final urgencyColor = _getUrgencyColor(vehicle.urgencyLevel);
 
     return Card(
-      color: urgencyColor.withValues(alpha: 0.45),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -50,13 +49,15 @@ class BesiktningStatusCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[200],
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _getWeekdayName(vehicle.nextBesiktningDate!),
-                      style: TextStyle(color: Colors.grey[200]),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ],
                 ),

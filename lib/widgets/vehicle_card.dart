@@ -67,14 +67,9 @@ class VehicleCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: hasInspectionDate
-                      ? urgencyColor.withValues(alpha: 0.1)
-                      : Colors.grey[100],
+                  color: Theme.of(context).colorScheme.secondary,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: hasInspectionDate ? urgencyColor : Colors.grey[300]!,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.grey[700]!, width: 1.5),
                 ),
                 child: Row(
                   children: [
@@ -82,9 +77,7 @@ class VehicleCard extends StatelessWidget {
                       hasInspectionDate
                           ? Icons.calendar_today
                           : Icons.event_busy,
-                      color: hasInspectionDate
-                          ? urgencyColor
-                          : Colors.grey[400],
+                      color: Theme.of(context).colorScheme.onSurface,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -106,9 +99,7 @@ class VehicleCard extends StatelessWidget {
                                 : 'Ange ett datum för att visa',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: hasInspectionDate
-                                  ? urgencyColor
-                                  : Colors.grey[600],
+                              color: Colors.grey[600],
                             ),
                           ),
                         ],

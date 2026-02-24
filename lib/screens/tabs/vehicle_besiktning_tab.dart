@@ -74,7 +74,7 @@ class VehicleBesiktningTab extends StatelessWidget {
           title: 'Vanliga fel',
           description:
               'Se vad som ofta går fel på ${vehicle.make} ${vehicle.model}',
-          color: Colors.orange,
+          color: Colors.blue,
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Vanliga fel - kommer snart')),
@@ -89,7 +89,7 @@ class VehicleBesiktningTab extends StatelessWidget {
           icon: Icons.location_on,
           title: 'Hitta besiktningsstation',
           description: 'Boka tid på närmaste station',
-          color: Colors.green,
+          color: Colors.blue,
           onTap: () => _openBesiktningMap(context),
         ),
       ],
