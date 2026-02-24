@@ -39,7 +39,7 @@ Widget buildSummaryStats(
             children: [
               _buildStatItem(
                 context,
-                'Totalt',
+                'Antal',
                 '${records.length}',
                 'poster',
                 Icons.list,

@@ -123,7 +123,7 @@ class BesiktningStatusCard extends StatelessWidget {
   // Empty state when no date is set
   Widget _buildEmptyStateCard(BuildContext context) {
     return Card(
-      color: Colors.grey[100],
+      color: Theme.of(context).colorScheme.secondary,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -159,7 +159,7 @@ class BesiktningStatusCard extends StatelessWidget {
               icon: const Icon(Icons.add),
               label: const Text('Lägg till datum'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],

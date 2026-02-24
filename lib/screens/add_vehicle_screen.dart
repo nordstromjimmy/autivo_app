@@ -144,7 +144,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Ta bort fordon?'),
         content: const Text(
-          'Detta kommer permanent ta bort fordonet och all dess servicehistorik. Denna åtgärd kan inte ångras.',
+          'Detta kommer ta bort fordonet och all dess servicehistorik. Du kan ångra inom 3 sekunder.',
         ),
         actions: [
           TextButton(
@@ -161,14 +161,43 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     );
 
     if (confirm == true && mounted) {
-      final vehicleId = widget.existingVehicle!.id;
+      // Capture the notifier and deleted vehicle
+      final notifier = ref.read(vehiclesProvider.notifier);
+      final deletedVehicle = widget.existingVehicle!;
 
-      // Navigate away first
-      Navigator.of(context).pop(); // Close edit screen
+      // Delete the vehicle
+      notifier.deleteVehicle(deletedVehicle.id);
 
-      // Delete after navigation completes
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(vehiclesProvider.notifier).deleteVehicle(vehicleId);
+      // Only pop once - close edit screen
+      Navigator.of(context).pop(); // ← ONLY ONE POP!
+
+      // Show SnackBar with undo
+      // This will show on the VehicleDetailsScreen
+      ScaffoldMessenger.of(context).clearSnackBars();
+
+      final messenger = ScaffoldMessenger.of(context);
+      bool actionClicked = false;
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Fordon borttaget'),
+          action: SnackBarAction(
+            label: 'Ångra',
+            onPressed: () {
+              actionClicked = true;
+              // Re-add the vehicle
+              notifier.addVehicle(deletedVehicle);
+              messenger.removeCurrentSnackBar();
+            },
+          ),
+        ),
+      );
+
+      // Manually dismiss after 3 seconds if action wasn't clicked
+      Future.delayed(const Duration(seconds: 3), () {
+        if (!actionClicked) {
+          messenger.removeCurrentSnackBar();
+        }
       });
     }
   }
@@ -191,7 +220,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Registreringsnummer *',
                   hintText: 'ABC123',
-                  //prefixIcon: Icon(Icons.confirmation_number),
                 ),
                 textCapitalization: TextCapitalization.characters,
                 enabled: !isEditMode,
@@ -214,7 +242,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 ),
               ],
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 "Obligatoriska uppgifter",
                 style: TextStyle(fontWeight: FontWeight.w500),
               ),
@@ -278,7 +306,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 "Valfria uppgifter",
                 style: TextStyle(fontWeight: FontWeight.w500),
               ),
@@ -361,7 +389,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                         style: TextStyle(
                           color: _nextBesiktningDate == null
                               ? Colors.grey
-                              : Colors.grey,
+                              : Colors.black,
                         ),
                       ),
                       const Icon(Icons.calendar_today),

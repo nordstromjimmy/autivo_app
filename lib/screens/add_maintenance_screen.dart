@@ -96,13 +96,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
     super.dispose();
   }
 
-  /*   Color get _selectedTypeColor {
-    final type = _maintenanceTypes.firstWhere(
-      (t) => t['value'] == _selectedType,
-    );
-    return type['color'] as Color;
-  } */
-
   Future<void> _selectDate() async {
     final date = await showDatePicker(
       context: context,
@@ -155,7 +148,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Ta bort post?'),
-        content: const Text('Denna åtgärd kan inte ångras.'),
+        content: const Text('Du kan ångra inom 3 sekunder.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -171,18 +164,43 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
     );
 
     if (confirm == true && mounted) {
-      ref
-          .read(maintenanceNotifierProvider.notifier)
-          .deleteRecord(widget.existingRecord!.id);
+      // Capture the notifier and deleted record
+      final notifier = ref.read(maintenanceNotifierProvider.notifier);
+      final deletedRecord = widget.existingRecord!;
+
+      // Delete the record
+      notifier.deleteRecord(deletedRecord.id);
+
+      // Navigate back
       Navigator.pop(context);
 
+      // Show SnackBar with undo on the previous screen
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Post borttagen'),
-          duration: Duration(seconds: 2),
+
+      final messenger = ScaffoldMessenger.of(context);
+      bool actionClicked = false;
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Post borttagen'),
+          action: SnackBarAction(
+            label: 'Ångra',
+            onPressed: () {
+              actionClicked = true;
+              // Re-add the record
+              notifier.addRecord(deletedRecord);
+              messenger.removeCurrentSnackBar();
+            },
+          ),
         ),
       );
+
+      // Manually dismiss after 3 seconds if action wasn't clicked
+      Future.delayed(const Duration(seconds: 3), () {
+        if (!actionClicked) {
+          messenger.removeCurrentSnackBar();
+        }
+      });
     }
   }
 
@@ -264,9 +282,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                                       fontWeight: isSelected
                                           ? FontWeight.w600
                                           : FontWeight.normal,
-                                      color: isSelected
-                                          ? Colors.grey[700]
-                                          : Colors.grey[700],
+                                      color: Colors.grey[700],
                                     ),
                                   ),
                                 ],
@@ -411,15 +427,12 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                       label: const Text('Ta bort'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadiusGeometry.circular(12),
-                        ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     )
                   : const SizedBox(height: 14),
               const SizedBox(height: 14),
-              // Save button with animated color based on selected type
+              // Save button
               ElevatedButton(
                 onPressed: _saveRecord,
                 style: ElevatedButton.styleFrom(

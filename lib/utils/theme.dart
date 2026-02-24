@@ -9,6 +9,7 @@ class AppTheme {
         seedColor: Colors.blue,
         surface: Colors.white,
         brightness: Brightness.light,
+        secondary: Colors.white,
       ),
       appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
       cardTheme: CardThemeData(
@@ -98,7 +99,7 @@ class AppTheme {
         brightness: Brightness.dark,
         primary: const Color(0xFF64B5F6), // Lighter blue for dark mode
         surface: const Color(0xFF1E1E1E), // Dark surface
-        //background: const Color(0xFF121212), // Dark background
+        secondary: const Color(0xFF2C2C2C),
       ),
       scaffoldBackgroundColor: const Color(0xFF121212),
       appBarTheme: const AppBarTheme(

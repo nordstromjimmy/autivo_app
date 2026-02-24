@@ -50,6 +50,8 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
         onPressed: () {
           Navigator.push(
             context,
