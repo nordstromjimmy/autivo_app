@@ -6,6 +6,7 @@ import 'models/checklist_state.dart';
 import 'models/vehicle.dart';
 import 'models/maintenance_record.dart';
 import 'screens/home_screen.dart';
+import 'services/supabase_config.dart';
 import 'utils/theme.dart';
 import 'screens/splash_screen.dart';
 
@@ -27,6 +28,9 @@ void main() async {
   await Hive.openBox<Vehicle>('vehicles');
   await Hive.openBox<MaintenanceRecord>('maintenance');
   await Hive.openBox<ChecklistState>('checklist');
+
+  await SupabaseConfig.initialize();
+  print('Supabase initialized: ${SupabaseConfig.client.auth.currentUser}');
 
   runApp(const ProviderScope(child: MyApp()));
 }

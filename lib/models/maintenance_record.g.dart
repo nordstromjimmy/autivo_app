@@ -20,19 +20,24 @@ class MaintenanceRecordAdapter extends TypeAdapter<MaintenanceRecord> {
       id: fields[0] as String,
       vehicleId: fields[1] as String,
       date: fields[2] as DateTime,
-      mileage: fields[3] as int?,
-      type: fields[4] as String,
-      description: fields[5] as String,
+      type: fields[3] as String,
+      description: fields[4] as String,
+      mileage: fields[5] as int?,
       cost: fields[6] as double?,
       location: fields[7] as String?,
       createdAt: fields[8] as DateTime?,
+      supabaseId: fields[9] as String?,
+      lastSyncedAt: fields[10] as DateTime?,
+      needsSync: fields[11] as bool,
+      userId: fields[12] as String?,
+      updatedAt: fields[13] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, MaintenanceRecord obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -40,17 +45,27 @@ class MaintenanceRecordAdapter extends TypeAdapter<MaintenanceRecord> {
       ..writeByte(2)
       ..write(obj.date)
       ..writeByte(3)
-      ..write(obj.mileage)
-      ..writeByte(4)
       ..write(obj.type)
-      ..writeByte(5)
+      ..writeByte(4)
       ..write(obj.description)
+      ..writeByte(5)
+      ..write(obj.mileage)
       ..writeByte(6)
       ..write(obj.cost)
       ..writeByte(7)
       ..write(obj.location)
       ..writeByte(8)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(9)
+      ..write(obj.supabaseId)
+      ..writeByte(10)
+      ..write(obj.lastSyncedAt)
+      ..writeByte(11)
+      ..write(obj.needsSync)
+      ..writeByte(12)
+      ..write(obj.userId)
+      ..writeByte(13)
+      ..write(obj.updatedAt);
   }
 
   @override

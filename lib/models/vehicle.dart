@@ -61,7 +61,25 @@ class Vehicle extends HiveObject {
   bool receivedViaTransfer; // Was this transferred from another user?
 
   @HiveField(18)
-  int? currentMileage;
+  int? currentMileage; // Current odometer reading
+
+  // ==================== SYNC METADATA ====================
+  // These fields enable cloud sync without breaking offline functionality
+
+  @HiveField(19)
+  String? supabaseId; // ID in Supabase database (null if not synced yet)
+
+  @HiveField(20)
+  DateTime? lastSyncedAt; // Last successful sync to cloud
+
+  @HiveField(21)
+  bool needsSync; // Has local changes that need uploading
+
+  @HiveField(22)
+  String? userId; // Supabase user ID who owns this vehicle (null for anonymous)
+
+  @HiveField(23)
+  DateTime updatedAt; // Last local update time (for conflict resolution)
 
   Vehicle({
     required this.id,
@@ -83,12 +101,38 @@ class Vehicle extends HiveObject {
     this.previousOwnerId,
     this.receivedViaTransfer = false,
     this.currentMileage,
-  }) : createdAt = createdAt ?? DateTime.now();
+    // Sync fields with sensible defaults
+    this.supabaseId,
+    this.lastSyncedAt,
+    this.needsSync = true, // Default to needing sync (new records)
+    this.userId,
+    DateTime? updatedAt,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
+
+  // Mark this vehicle as needing sync (call after any edit)
+  void markForSync() {
+    needsSync = true;
+    updatedAt = DateTime.now();
+  }
+
+  // Mark as successfully synced (call after cloud upload)
+  void markSynced(String cloudId) {
+    supabaseId = cloudId;
+    lastSyncedAt = DateTime.now();
+    needsSync = false;
+  }
+
+  // Check if this vehicle is synced to cloud
+  bool get isSynced => supabaseId != null;
+
+  // Check if user is signed in (has userId)
+  bool get hasCloudBackup => userId != null;
 
   // Getters
   int get daysUntilBesiktning {
     if (nextBesiktningDate == null) {
-      return 0; // or return a large number like 999
+      return 0;
     }
     return nextBesiktningDate!.difference(DateTime.now()).inDays;
   }
@@ -138,5 +182,60 @@ class Vehicle extends HiveObject {
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}';
+  }
+
+  // Create a copy with updated fields (useful for syncing)
+  Vehicle copyWith({
+    String? id,
+    String? registrationNumber,
+    String? make,
+    String? model,
+    int? year,
+    String? fuelType,
+    String? engineSize,
+    DateTime? nextBesiktningDate,
+    DateTime? createdAt,
+    String? verificationLevel,
+    DateTime? verifiedAt,
+    String? verificationProof,
+    bool? isCurrentOwner,
+    DateTime? ownershipStartDate,
+    DateTime? ownershipEndDate,
+    String? transferCode,
+    String? previousOwnerId,
+    bool? receivedViaTransfer,
+    int? currentMileage,
+    String? supabaseId,
+    DateTime? lastSyncedAt,
+    bool? needsSync,
+    String? userId,
+    DateTime? updatedAt,
+  }) {
+    return Vehicle(
+      id: id ?? this.id,
+      registrationNumber: registrationNumber ?? this.registrationNumber,
+      make: make ?? this.make,
+      model: model ?? this.model,
+      year: year ?? this.year,
+      fuelType: fuelType ?? this.fuelType,
+      engineSize: engineSize ?? this.engineSize,
+      nextBesiktningDate: nextBesiktningDate ?? this.nextBesiktningDate,
+      createdAt: createdAt ?? this.createdAt,
+      verificationLevel: verificationLevel ?? this.verificationLevel,
+      verifiedAt: verifiedAt ?? this.verifiedAt,
+      verificationProof: verificationProof ?? this.verificationProof,
+      isCurrentOwner: isCurrentOwner ?? this.isCurrentOwner,
+      ownershipStartDate: ownershipStartDate ?? this.ownershipStartDate,
+      ownershipEndDate: ownershipEndDate ?? this.ownershipEndDate,
+      transferCode: transferCode ?? this.transferCode,
+      previousOwnerId: previousOwnerId ?? this.previousOwnerId,
+      receivedViaTransfer: receivedViaTransfer ?? this.receivedViaTransfer,
+      currentMileage: currentMileage ?? this.currentMileage,
+      supabaseId: supabaseId ?? this.supabaseId,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      needsSync: needsSync ?? this.needsSync,
+      userId: userId ?? this.userId,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }
