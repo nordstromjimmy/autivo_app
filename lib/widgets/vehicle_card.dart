@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/vehicle.dart';
 import '../screens/add_vehicle_screen.dart';
 import '../screens/vehicle_details_screen.dart';
+import 'sync_status_indicator.dart';
 
 class VehicleCard extends StatelessWidget {
   final Vehicle vehicle;
@@ -50,6 +51,12 @@ class VehicleCard extends StatelessWidget {
                           vehicle.registrationNumber,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 8),
+                        SyncStatusBadge(
+                          isSynced: vehicle.isSynced,
+                          needsSync: vehicle.needsSync,
+                          hasCloudBackup: vehicle.hasCloudBackup,
                         ),
                         const SizedBox(height: 4),
                         Text(

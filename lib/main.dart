@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -13,6 +14,8 @@ import 'screens/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await dotenv.load(fileName: ".env");
+
   await Hive.initFlutter();
 
   // TEMPORARY: Clear all boxes to reset schema
@@ -26,11 +29,10 @@ void main() async {
   Hive.registerAdapter(ChecklistStateAdapter());
 
   await Hive.openBox<Vehicle>('vehicles');
-  await Hive.openBox<MaintenanceRecord>('maintenance');
+  await Hive.openBox<MaintenanceRecord>('maintenance_records');
   await Hive.openBox<ChecklistState>('checklist');
 
   await SupabaseConfig.initialize();
-  print('Supabase initialized: ${SupabaseConfig.client.auth.currentUser}');
 
   runApp(const ProviderScope(child: MyApp()));
 }
