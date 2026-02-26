@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../models/vehicle.dart';
 import '../providers/vehicle_provider.dart';
 import '../utils/constants.dart';
+import '../utils/custom_snackbar.dart';
 
 class AddVehicleScreen extends ConsumerStatefulWidget {
   final Vehicle? existingVehicle; // null = add mode, not null = edit mode
@@ -130,11 +131,11 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
       Navigator.pop(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditMode ? 'Fordon uppdaterat' : 'Fordon tillagt'),
-        ),
-      );
+      if (isEditMode) {
+        CustomSnackBar.showSuccess(context, 'Fordon uppdaterat');
+      } else {
+        CustomSnackBar.showSuccess(context, 'Fordon tillagt');
+      }
     }
   }
 

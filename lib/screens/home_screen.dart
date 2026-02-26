@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/vehicle_provider.dart';
 import '../services/sync_manager.dart';
+import '../utils/custom_snackbar.dart';
 import '../widgets/vehicle_card.dart';
 import 'add_vehicle_screen.dart';
 import 'settings_screen.dart';
@@ -63,25 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onPressed: () async {
                     // Show loading
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Row(
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Text('Synkroniserar...'),
-                            ],
-                          ),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                      CustomSnackBar.showSyncing(context, 'Synkroniserar...');
                     }
 
                     // Sync (SyncManager automatically refreshes providers)
@@ -89,15 +72,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     // Show result
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(result.toString()),
-                          backgroundColor: result.success
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                      );
+                      if (result.success) {
+                        CustomSnackBar.showSuccess(context, result.toString());
+                      } else {
+                        CustomSnackBar.showError(context, result.toString());
+                      }
                     }
                   },
                 );
@@ -185,12 +164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!syncManager.isSignedIn) {
       // Show message that sync requires sign in
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logga in för att synkronisera'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        CustomSnackBar.showInfo(context, 'Logga in för att synkronisera');
       }
       return;
     }
@@ -201,24 +175,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // Show success message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(children: [SizedBox(width: 12), Text('Uppdaterad')]),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        CustomSnackBar.showSuccess(context, 'Uppdaterad');
       }
     } catch (e) {
       // Show error message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Synkronisering misslyckades: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        CustomSnackBar.showError(context, 'Synkronisering misslyckades: $e');
       }
     }
   }

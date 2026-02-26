@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/sync_manager.dart';
+import '../../utils/custom_snackbar.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -49,23 +50,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           if (mounted) {
             Navigator.pop(context); // Close sign up screen
             Navigator.pop(context); // Close sign in screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Konto skapat och data synkroniserad!'),
-                duration: Duration(seconds: 3),
-              ),
+            CustomSnackBar.showSuccess(
+              context,
+              'Konto skapat och data synkroniserad!',
             );
           }
         },
         loading: () {},
         error: (error, _) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Fel: ${error.toString()}'),
-                backgroundColor: Colors.red,
-              ),
-            );
+            CustomSnackBar.showError(context, 'Registreringen misslyckades');
           }
         },
       );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/custom_snackbar.dart';
 import 'sign_up_screen.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -38,20 +39,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         data: (_) {
           if (mounted) {
             Navigator.pop(context);
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Inloggad!')));
+            CustomSnackBar.showSuccess(context, 'Inloggad!');
           }
         },
         loading: () {},
         error: (error, _) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Fel: ${error.toString()}'),
-                backgroundColor: Colors.red,
-              ),
-            );
+            CustomSnackBar.showError(context, 'Inloggning misslyckades');
           }
         },
       );
@@ -267,10 +261,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 if (mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Återställningslänk skickad!'),
-                    ),
+                  CustomSnackBar.showInfo(
+                    context,
+                    'Återställningslänk skickad!!',
                   );
                 }
               }

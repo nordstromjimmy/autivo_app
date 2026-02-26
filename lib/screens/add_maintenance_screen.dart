@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/maintenance_record.dart';
 import '../providers/maintenance_provider.dart';
+import '../utils/custom_snackbar.dart';
 
 class AddMaintenanceScreen extends ConsumerStatefulWidget {
   final String vehicleId;
@@ -134,12 +135,11 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditMode ? 'Post uppdaterad' : 'Post tillagd'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (isEditMode) {
+        CustomSnackBar.showSuccess(context, 'Post uppdaterad');
+      } else {
+        CustomSnackBar.showSuccess(context, 'Post tillagd');
+      }
     }
   }
 

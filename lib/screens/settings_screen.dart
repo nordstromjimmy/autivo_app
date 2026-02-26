@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../services/sync_manager.dart';
+import '../utils/custom_snackbar.dart';
 import 'auth/sign_in_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -107,7 +108,6 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.login),
                       label: const Text('Logga in'),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 48),
@@ -202,13 +202,17 @@ class SettingsScreen extends ConsumerWidget {
     if (context.mounted) Navigator.pop(context);
 
     // Show result
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.toString()),
-          backgroundColor: result.success ? Colors.green : Colors.red,
-        ),
-      );
+    if (result.success) {
+      if (result.totalSynced > 0) {
+        // Show what was synced: "Synkroniserat: 2 fordon, 5 poster"
+        CustomSnackBar.showSuccess(context, result.toString());
+      } else {
+        // Nothing to sync
+        CustomSnackBar.showSuccess(context, 'Allt synkroniserat');
+      }
+    } else {
+      // Error occurred - show actual error message
+      CustomSnackBar.showError(context, result.message);
     }
   }
 
@@ -237,9 +241,7 @@ class SettingsScreen extends ConsumerWidget {
       await ref.read(authNotifierProvider.notifier).signOut();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Utloggad')));
+        CustomSnackBar.showInfo(context, 'Utloggad');
       }
     }
   }
@@ -257,12 +259,7 @@ Future<void> _openUrl(BuildContext context, String urlString) async {
       );
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kunde inte öppna länken'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomSnackBar.showError(context, 'Kunde inte öppna länken');
       }
     }
   } catch (e) {
