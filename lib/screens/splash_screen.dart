@@ -28,8 +28,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate to home after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    // Navigate to home after 3 seconds (change to 2 later?)
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       }
@@ -51,8 +51,8 @@ class _SplashScreenState extends State<SplashScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF2196F3), // Blue
-              const Color(0xFF1976D2), // Darker blue
+              const Color(0xFF0e8afd), // Blue
+              const Color(0xFF00a3e8), // Darker blue
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -64,6 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Image(image: AssetImage('assets/images/logo2.png')),
                 Text(
                   'AUTIVO',
                   style: TextStyle(
