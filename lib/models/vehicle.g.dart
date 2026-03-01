@@ -41,13 +41,14 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       needsSync: fields[21] as bool,
       userId: fields[22] as String?,
       updatedAt: fields[23] as DateTime?,
+      verificationConfidence: fields[24] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Vehicle obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(25)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -95,7 +96,9 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       ..writeByte(22)
       ..write(obj.userId)
       ..writeByte(23)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(24)
+      ..write(obj.verificationConfidence);
   }
 
   @override

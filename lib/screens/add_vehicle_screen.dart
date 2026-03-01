@@ -105,23 +105,45 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
   void _saveVehicle() {
     if (_formKey.currentState!.validate()) {
-      final vehicle = Vehicle(
-        id: isEditMode ? widget.existingVehicle!.id : const Uuid().v4(),
-        registrationNumber: _regNumberController.text.toUpperCase().trim(),
-        make: _makeController.text.trim(),
-        model: _modelController.text.trim(),
-        year: int.parse(_yearController.text),
-        fuelType: _selectedFuelType,
-        engineSize: _engineSizeController.text.isNotEmpty
-            ? _engineSizeController.text.trim()
-            : null,
-        currentMileage: _mileageController.text.isNotEmpty
-            ? int.tryParse(_mileageController.text)
-            : null,
-        nextBesiktningDate: _nextBesiktningDate,
-        ownershipStartDate: _ownershipStartDate,
-        createdAt: isEditMode ? widget.existingVehicle!.createdAt : null,
-      );
+      final Vehicle vehicle;
+
+      if (isEditMode) {
+        // ✅ EDIT MODE: Use copyWith (preserves verification!)
+        vehicle = widget.existingVehicle!.copyWith(
+          registrationNumber: _regNumberController.text.toUpperCase().trim(),
+          make: _makeController.text.trim(),
+          model: _modelController.text.trim(),
+          year: int.parse(_yearController.text),
+          fuelType: _selectedFuelType,
+          engineSize: _engineSizeController.text.isNotEmpty
+              ? _engineSizeController.text.trim()
+              : null,
+          currentMileage: _mileageController.text.isNotEmpty
+              ? int.tryParse(_mileageController.text)
+              : null,
+          nextBesiktningDate: _nextBesiktningDate,
+          ownershipStartDate: _ownershipStartDate,
+          // ✅ Verification automatically preserved!
+        );
+      } else {
+        // ✅ ADD MODE: Create new vehicle (no verification yet)
+        vehicle = Vehicle(
+          id: const Uuid().v4(),
+          registrationNumber: _regNumberController.text.toUpperCase().trim(),
+          make: _makeController.text.trim(),
+          model: _modelController.text.trim(),
+          year: int.parse(_yearController.text),
+          fuelType: _selectedFuelType,
+          engineSize: _engineSizeController.text.isNotEmpty
+              ? _engineSizeController.text.trim()
+              : null,
+          currentMileage: _mileageController.text.isNotEmpty
+              ? int.tryParse(_mileageController.text)
+              : null,
+          nextBesiktningDate: _nextBesiktningDate,
+          ownershipStartDate: _ownershipStartDate,
+        );
+      }
 
       if (isEditMode) {
         ref.read(vehiclesProvider.notifier).updateVehicle(vehicle);

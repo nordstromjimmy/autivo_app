@@ -182,6 +182,12 @@ class VehicleRepository {
       ownershipStartDate: data['ownership_start_date'] != null
           ? DateTime.parse(data['ownership_start_date'] as String)
           : null,
+      verificationLevel: data['verification_level'] as String? ?? 'none',
+      verifiedAt: data['verified_at'] != null
+          ? DateTime.parse(data['verified_at'] as String)
+          : null,
+      verificationProof: data['verification_proof'] as String?,
+      verificationConfidence: data['verification_confidence'] as int?,
       createdAt: DateTime.parse(data['created_at'] as String),
       updatedAt: DateTime.parse(data['updated_at'] as String),
       supabaseId: data['id'] as String,

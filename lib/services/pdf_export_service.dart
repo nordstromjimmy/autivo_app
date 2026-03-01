@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/maintenance_record.dart';
 import '../models/vehicle.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class PdfExportService {
   // Colors matching app theme
@@ -22,12 +24,14 @@ class PdfExportService {
   }) async {
     final pdf = pw.Document();
 
+    final logo = await _loadLogo();
+
     // Page 1: Cover Page
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         margin: pw.EdgeInsets.zero,
-        build: (context) => _buildCoverPage(vehicle),
+        build: (context) => _buildCoverPage(vehicle, logo),
       ),
     );
 
@@ -60,7 +64,7 @@ class PdfExportService {
   }
 
   // ==================== COVER PAGE ====================
-  static pw.Widget _buildCoverPage(Vehicle vehicle) {
+  static pw.Widget _buildCoverPage(Vehicle vehicle, pw.ImageProvider logo) {
     return pw.Container(
       decoration: pw.BoxDecoration(
         gradient: pw.LinearGradient(
@@ -73,6 +77,7 @@ class PdfExportService {
         child: pw.Column(
           mainAxisAlignment: pw.MainAxisAlignment.center,
           children: [
+            pw.SizedBox(height: 40),
             // Autivo Logo/Branding
             pw.Text(
               'AUTIVO',
@@ -95,20 +100,15 @@ class PdfExportService {
 
             pw.SizedBox(height: 60),
 
-            // Vehicle Icon Placeholder
+            // Logo
             pw.Container(
-              width: 120,
-              height: 120,
-              decoration: pw.BoxDecoration(
-                color: PdfColors.white,
-                borderRadius: pw.BorderRadius.circular(60),
-              ),
-              child: pw.Center(
-                child: pw.Icon(
-                  pw.IconData(0xe531), // car icon
-                  size: 60,
-                  color: primaryColor,
-                ),
+              width: 150,
+              height: 150,
+
+              child: pw.ClipRRect(
+                horizontalRadius: 60,
+                verticalRadius: 60,
+                child: pw.Image(logo, fit: pw.BoxFit.contain),
               ),
             ),
 
@@ -147,7 +147,7 @@ class PdfExportService {
                   borderRadius: pw.BorderRadius.circular(20),
                 ),
                 child: pw.Text(
-                  vehicle.verificationBadge,
+                  vehicle.verificationBadgePdf,
                   style: const pw.TextStyle(
                     fontSize: 14,
                     color: PdfColors.white,
@@ -670,6 +670,12 @@ class PdfExportService {
       'dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  /// Load logo from assets for PDF
+  static Future<pw.ImageProvider> _loadLogo() async {
+    final ByteData bytes = await rootBundle.load('assets/images/logo2.png');
+    return pw.MemoryImage(bytes.buffer.asUint8List());
   }
 
   /// Share the PDF using the system share sheet

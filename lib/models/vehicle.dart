@@ -81,6 +81,10 @@ class Vehicle extends HiveObject {
   @HiveField(23)
   DateTime updatedAt; // Last local update time (for conflict resolution)
 
+  // ==================== NEW: VERIFICATION CONFIDENCE ====================
+  @HiveField(24)
+  int? verificationConfidence; // 0-100 confidence score from OCR validation
+
   Vehicle({
     required this.id,
     required this.registrationNumber,
@@ -107,6 +111,7 @@ class Vehicle extends HiveObject {
     this.needsSync = true, // Default to needing sync (new records)
     this.userId,
     DateTime? updatedAt,
+    this.verificationConfidence, // NEW: Confidence score
   }) : createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
@@ -157,7 +162,19 @@ class Vehicle extends HiveObject {
 
   bool get isVerified => verificationLevel != 'none';
 
+  // UPDATED: Use confidence score for better badge
   String get verificationBadge {
+    if (verificationLevel == 'none') return '';
+
+    // For OCR-verified vehicles, use confidence score
+    if (verificationLevel == 'self' && verificationConfidence != null) {
+      if (verificationConfidence! >= 90) {
+        return '✓ Verifierad';
+      }
+      return '✓ Ägare';
+    }
+
+    // Fallback to old badge system
     switch (verificationLevel) {
       case 'self':
         return '✓ Ägare';
@@ -165,6 +182,29 @@ class Vehicle extends HiveObject {
         return '✓ Verifierad';
       case 'official':
         return '✓ Officiellt Verifierad';
+      default:
+        return '';
+    }
+  }
+
+  // PDF-safe verification badge (removes checkmarks)
+  String get verificationBadgePdf {
+    if (verificationLevel == 'none') return '';
+
+    if (verificationLevel == 'self' && verificationConfidence != null) {
+      if (verificationConfidence! >= 90) {
+        return 'VERIFIERAD';
+      }
+      return 'ÄGARE';
+    }
+
+    switch (verificationLevel) {
+      case 'self':
+        return 'ÄGARE';
+      case 'sms':
+        return 'VERIFIERAD';
+      case 'official':
+        return 'OFFICIELLT VERIFIERAD';
       default:
         return '';
     }
@@ -210,6 +250,7 @@ class Vehicle extends HiveObject {
     bool? needsSync,
     String? userId,
     DateTime? updatedAt,
+    int? verificationConfidence,
   }) {
     return Vehicle(
       id: id ?? this.id,
@@ -236,6 +277,8 @@ class Vehicle extends HiveObject {
       needsSync: needsSync ?? this.needsSync,
       userId: userId ?? this.userId,
       updatedAt: updatedAt ?? this.updatedAt,
+      verificationConfidence:
+          verificationConfidence ?? this.verificationConfidence, // NEW
     );
   }
 }

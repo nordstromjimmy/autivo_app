@@ -27,6 +27,10 @@ class SyncService {
         'next_besiktning_date': vehicle.nextBesiktningDate?.toIso8601String(),
         'current_mileage': vehicle.currentMileage,
         'ownership_start_date': vehicle.ownershipStartDate?.toIso8601String(),
+        'verification_level': vehicle.verificationLevel,
+        'verified_at': vehicle.verifiedAt?.toIso8601String(),
+        'verification_proof': vehicle.verificationProof,
+        'verification_confidence': vehicle.verificationConfidence,
         'created_at': vehicle.createdAt.toIso8601String(),
         'updated_at': vehicle.updatedAt.toIso8601String(),
       };
