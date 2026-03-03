@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../providers/app_info_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
@@ -149,10 +150,20 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
           const _SectionHeader(title: 'Om'),
 
-          const ListTile(
-            leading: Icon(Icons.info),
-            title: Text('Version'),
-            subtitle: Text('0.0.1'),
+          Consumer(
+            builder: (context, ref, child) {
+              final versionAsync = ref.watch(appVersionProvider);
+
+              return ListTile(
+                leading: const Icon(Icons.info),
+                title: const Text('Version'),
+                subtitle: versionAsync.when(
+                  data: (version) => Text(version),
+                  loading: () => const Text('Laddar...'),
+                  error: (_, __) => const Text('Okänd'),
+                ),
+              );
+            },
           ),
 
           ListTile(

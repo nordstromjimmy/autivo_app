@@ -19,7 +19,6 @@ void main() async {
   await Hive.initFlutter();
 
   // TEMPORARY: Clear all boxes to reset schema
-
   //await Hive.deleteBoxFromDisk('vehicles');
   //await Hive.deleteBoxFromDisk('maintenance');
   //await Hive.deleteBoxFromDisk('checklist');

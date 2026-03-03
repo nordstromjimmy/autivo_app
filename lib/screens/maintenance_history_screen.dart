@@ -68,17 +68,6 @@ class _MaintenanceHistoryScreenState
                   ],
                 ),
               ),
-              // Placeholder for future features
-              const PopupMenuItem(
-                enabled: false,
-                child: Row(
-                  children: [
-                    Icon(Icons.share, size: 20, color: Colors.grey),
-                    SizedBox(width: 12),
-                    Text('Dela historik', style: TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              ),
             ],
           ),
         ],

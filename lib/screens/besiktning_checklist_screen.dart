@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vehicle.dart';
+import '../utils/custom_snackbar.dart';
 import '../widgets/checklist_item.dart';
 import '../providers/checklist_provider.dart';
 
@@ -165,12 +166,7 @@ class BesiktningChecklistScreen extends ConsumerWidget {
       ref.read(checklistNotifierProvider.notifier).clearChecklist(vehicle.id);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Checklista rensad'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        CustomSnackBar.showInfo(context, 'Checklista rensad');
       }
     }
   }
