@@ -1,4 +1,4 @@
-package com.example.mina_fordon
+package se.autivo.app
 
 import io.flutter.embedding.android.FlutterActivity
 

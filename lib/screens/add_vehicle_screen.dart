@@ -381,11 +381,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                         _ownershipStartDate == null
                             ? 'Välj datum (valfritt)'
                             : '${_ownershipStartDate!.day}/${_ownershipStartDate!.month} ${_ownershipStartDate!.year}',
-                        style: TextStyle(
-                          color: _ownershipStartDate == null
-                              ? Colors.grey
-                              : Colors.black,
-                        ),
                       ),
                       const Icon(Icons.calendar_today),
                     ],
@@ -409,11 +404,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                         _nextBesiktningDate == null
                             ? 'Välj datum (valfritt)'
                             : '${_nextBesiktningDate!.day}/${_nextBesiktningDate!.month} ${_nextBesiktningDate!.year}',
-                        style: TextStyle(
-                          color: _nextBesiktningDate == null
-                              ? Colors.grey
-                              : Colors.black,
-                        ),
                       ),
                       const Icon(Icons.calendar_today),
                     ],

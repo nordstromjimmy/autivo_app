@@ -5,6 +5,7 @@ import '../../widgets/action_card.dart';
 import '../../widgets/besiktning_status_card.dart';
 import '../../widgets/vehicle_info_card.dart';
 import '../besiktning_checklist_screen.dart';
+import '../common_issues_screen.dart';
 
 class VehicleBesiktningTab extends StatelessWidget {
   final Vehicle vehicle;
@@ -72,12 +73,14 @@ class VehicleBesiktningTab extends StatelessWidget {
         ActionCard(
           icon: Icons.warning_amber,
           title: 'Vanliga fel',
-          description:
-              'Se vad som ofta går fel på ${vehicle.make} ${vehicle.model}',
+          description: 'Generell list över vanligt förekommande fel',
           color: Colors.blue,
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Vanliga fel - kommer snart')),
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CommonIssuesScreen(),
+              ),
             );
           },
         ),
