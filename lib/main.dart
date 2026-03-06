@@ -7,6 +7,7 @@ import 'models/checklist_state.dart';
 import 'models/vehicle.dart';
 import 'models/maintenance_record.dart';
 import 'screens/home_screen.dart';
+import 'services/revenue_cat_service.dart';
 import 'services/supabase_config.dart';
 import 'utils/theme.dart';
 import 'screens/splash_screen.dart';
@@ -32,6 +33,13 @@ void main() async {
   await Hive.openBox<ChecklistState>('checklist');
 
   await SupabaseConfig.initialize();
+
+  final revenueCatApiKey = dotenv.env['REVENUE_CAT_API_KEY'];
+  if (revenueCatApiKey != null) {
+    await RevenueCatService().initialize(revenueCatApiKey);
+  } else {
+    print('⚠️ RevenueCat API key not found in .env file');
+  }
 
   runApp(const ProviderScope(child: MyApp()));
 }

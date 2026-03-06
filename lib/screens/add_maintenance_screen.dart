@@ -55,7 +55,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
       'value': 'other',
       'label': 'Annat',
       'icon': Icons.description,
-      'color': Colors.grey,
+      'color': Colors.brown,
     },
   ];
 
@@ -223,12 +223,6 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            Icons.category,
-                            size: 20,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(width: 8),
                           Text(
                             'Typ av underhåll',
                             style: Theme.of(context).textTheme.titleMedium
@@ -256,9 +250,8 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                                 vertical: 12,
                               ),
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? color.withValues(alpha: 0.15)
-                                    : Colors.grey[100],
+                                color: color.withValues(alpha: 0.01),
+
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected ? color : Colors.grey[300]!,

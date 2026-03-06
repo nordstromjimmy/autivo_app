@@ -20,26 +20,8 @@ class VehicleVerificationScreen extends ConsumerStatefulWidget {
 class _VehicleVerificationScreenState
     extends ConsumerState<VehicleVerificationScreen> {
   final VerificationService _verificationService = VerificationService();
-  final PhotoService _photoService = PhotoService(); // Add separate instance
-  File? _verificationPhoto;
+  final PhotoService _photoService = PhotoService();
   bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadVerificationPhoto();
-  }
-
-  Future<void> _loadVerificationPhoto() async {
-    if (widget.vehicle.verificationProof != null) {
-      final file = File(widget.vehicle.verificationProof!);
-      if (await file.exists()) {
-        setState(() {
-          _verificationPhoto = file;
-        });
-      }
-    }
-  }
 
   @override
   void dispose() {
@@ -49,13 +31,20 @@ class _VehicleVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Watch the vehicle provider to get real-time updates
+    final vehicles = ref.watch(vehiclesProvider);
+    final currentVehicle = vehicles.firstWhere(
+      (v) => v.id == widget.vehicle.id,
+      orElse: () => widget.vehicle, // Fallback to passed vehicle if not found
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text('Verifiera ägarskap')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Current status
-          _buildCurrentStatus(context),
+          _buildCurrentStatus(context, currentVehicle),
 
           const SizedBox(height: 24),
 
@@ -69,12 +58,12 @@ class _VehicleVerificationScreenState
           const SizedBox(height: 16),
 
           // Self-verification option
-          _buildVerificationOption(context),
+          _buildVerificationOption(context, currentVehicle),
 
           const SizedBox(height: 24),
 
-          // Show verification photo if exists
-          if (_verificationPhoto != null) _buildVerificationPhotoCard(),
+          // Show verification status if verified
+          if (currentVehicle.isVerified) _buildVerificationStatusCard(),
 
           const SizedBox(height: 24),
 
@@ -84,13 +73,13 @@ class _VehicleVerificationScreenState
           const SizedBox(height: 32),
 
           // Developer reset button
-          if (widget.vehicle.isVerified) _buildDeveloperResetSection(context),
+          //if (currentVehicle.isVerified) _buildDeveloperResetSection(context),
         ],
       ),
     );
   }
 
-  Widget _buildCurrentStatus(BuildContext context) {
+  Widget _buildCurrentStatus(BuildContext context, Vehicle vehicle) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -99,13 +88,6 @@ class _VehicleVerificationScreenState
           children: [
             Row(
               children: [
-                Icon(
-                  widget.vehicle.isVerified
-                      ? Icons.check_circle
-                      : Icons.info_outline,
-                  color: widget.vehicle.isVerified ? Colors.green : Colors.grey,
-                ),
-                const SizedBox(width: 8),
                 Text(
                   'Nuvarande status',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -116,22 +98,19 @@ class _VehicleVerificationScreenState
             ),
             const SizedBox(height: 12),
             Text(
-              widget.vehicle.verificationBadge.isEmpty
+              vehicle.verificationBadge.isEmpty
                   ? 'Ej verifierad'
-                  : widget.vehicle.verificationBadge,
+                  : vehicle.verificationBadge,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: widget.vehicle.isVerified
-                    ? Colors.green
-                    : Colors.grey[600],
+                color: vehicle.isVerified ? Colors.green : Colors.grey[600],
               ),
             ),
-            if (widget.vehicle.isVerified &&
-                widget.vehicle.verifiedAt != null) ...[
+            if (vehicle.isVerified && vehicle.verifiedAt != null) ...[
               const SizedBox(height: 4),
               Text(
-                'Verifierad ${_formatDate(widget.vehicle.verifiedAt!)}',
+                'Verifierad ${_formatDate(vehicle.verifiedAt!)}',
                 style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
             ],
@@ -141,8 +120,8 @@ class _VehicleVerificationScreenState
     );
   }
 
-  Widget _buildVerificationOption(BuildContext context) {
-    final isVerified = widget.vehicle.isVerified;
+  Widget _buildVerificationOption(BuildContext context, Vehicle vehicle) {
+    final isVerified = vehicle.isVerified;
 
     return Card(
       child: InkWell(
@@ -157,7 +136,7 @@ class _VehicleVerificationScreenState
                 decoration: BoxDecoration(
                   color: isVerified
                       ? Colors.green
-                      : Colors.orange.withOpacity(0.1),
+                      : Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -184,14 +163,6 @@ class _VehicleVerificationScreenState
                       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '✓ Ägare',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -206,42 +177,47 @@ class _VehicleVerificationScreenState
     );
   }
 
-  Widget _buildVerificationPhotoCard() {
+  Widget _buildVerificationStatusCard() {
+    final theme = Theme.of(context);
+
     return Card(
+      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Uppladdat registreringsbevis',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _showDeletePhotoConfirmation(),
-                ),
-              ],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.verified, color: Colors.green, size: 32),
             ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                _verificationPhoto!,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Verifierad med bild',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Registreringsbevis har verifierats',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Tryck på papperskorgen för att ta bort och verifiera igen',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: () => _showDeletePhotoConfirmation(),
+              tooltip: 'Återställ verifiering',
             ),
           ],
         ),
@@ -250,8 +226,13 @@ class _VehicleVerificationScreenState
   }
 
   Widget _buildWhyVerifySection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
-      color: Colors.blue[50],
+      color: isDark
+          ? theme.colorScheme.surfaceContainerHighest
+          : Colors.blue[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -259,39 +240,49 @@ class _VehicleVerificationScreenState
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue[700]),
+                Icon(
+                  Icons.info_outline,
+                  color: isDark ? Colors.blue[300] : Colors.blue[700],
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Varför verifiera?',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
+                    color: isDark ? Colors.blue[300] : Colors.blue[900],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            _buildBenefitItem('Ökar värdet på din bil vid försäljning'),
-            _buildBenefitItem('Bygger förtroende hos köpare'),
-            _buildBenefitItem('Bevis på äkthet vid export av historik'),
-            _buildBenefitItem('Visar att du är den riktiga ägaren'),
+            _buildBenefitItem('Ökar värdet på din bil vid försäljning', isDark),
+            _buildBenefitItem('Bygger förtroende hos köpare', isDark),
+            _buildBenefitItem('Bevis på äkthet vid export av historik', isDark),
+            _buildBenefitItem('Visar att du är den riktiga ägaren', isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBenefitItem(String text) {
+  Widget _buildBenefitItem(String text, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(Icons.check, size: 16, color: Colors.blue[700]),
+          Icon(
+            Icons.check,
+            size: 16,
+            color: isDark ? Colors.blue[300] : Colors.blue[700],
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 13, color: Colors.blue[900]),
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.blue[200] : Colors.blue[900],
+              ),
             ),
           ),
         ],
@@ -299,9 +290,14 @@ class _VehicleVerificationScreenState
     );
   }
 
-  Widget _buildDeveloperResetSection(BuildContext context) {
+  /*   Widget _buildDeveloperResetSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
-      color: Colors.red[50],
+      color: isDark
+          ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
+          : Colors.red[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -309,13 +305,17 @@ class _VehicleVerificationScreenState
           children: [
             Row(
               children: [
-                Icon(Icons.bug_report, color: Colors.red[700], size: 20),
+                Icon(
+                  Icons.bug_report,
+                  color: isDark ? Colors.red[300] : Colors.red[700],
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Utvecklarverktyg',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red[900],
+                    color: isDark ? Colors.red[300] : Colors.red[900],
                     fontSize: 14,
                   ),
                 ),
@@ -324,7 +324,10 @@ class _VehicleVerificationScreenState
             const SizedBox(height: 12),
             Text(
               'Nollställ verifiering för att testa verifieringsflödet igen.',
-              style: TextStyle(fontSize: 13, color: Colors.red[800]),
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.red[200] : Colors.red[800],
+              ),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -332,15 +335,17 @@ class _VehicleVerificationScreenState
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Nollställ verifiering'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: BorderSide(color: Colors.red[300]!),
+                foregroundColor: isDark ? Colors.red[300] : Colors.red,
+                side: BorderSide(
+                  color: isDark ? Colors.red[300]! : Colors.red[300]!,
+                ),
               ),
             ),
           ],
         ),
       ),
     );
-  }
+  } */
 
   // === ACTIONS ===
 
@@ -652,10 +657,6 @@ class _VehicleVerificationScreenState
 
     ref.read(vehiclesProvider.notifier).updateVehicle(updatedVehicle);
 
-    setState(() {
-      _verificationPhoto = File(result.photoPath!);
-    });
-
     CustomSnackBar.showSuccess(context, 'Fordon verifierat!');
   }
 
@@ -663,9 +664,9 @@ class _VehicleVerificationScreenState
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Ta bort verifiering?'),
+        title: const Text('Återställ verifiering?'),
         content: const Text(
-          'Detta kommer ta bort fotot och återställa fordonet till overifierat läge.',
+          'Detta kommer att ta bort verifieringen och återställa fordonet till overifierat läge.',
         ),
         actions: [
           TextButton(
@@ -678,7 +679,7 @@ class _VehicleVerificationScreenState
               _deleteVerification();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Ta bort'),
+            child: const Text('Återställ'),
           ),
         ],
       ),
@@ -697,16 +698,12 @@ class _VehicleVerificationScreenState
 
     ref.read(vehiclesProvider.notifier).updateVehicle(updatedVehicle);
 
-    setState(() {
-      _verificationPhoto = null;
-    });
-
     if (mounted) {
-      CustomSnackBar.showInfo(context, 'Verifiering borttagen');
+      CustomSnackBar.showInfo(context, 'Verifiering återställd');
     }
   }
 
-  void _showResetConfirmation() {
+  /*   void _showResetConfirmation() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -737,7 +734,7 @@ class _VehicleVerificationScreenState
         ],
       ),
     );
-  }
+  } */
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month} ${date.year}';

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/vehicle_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/vehicle_limit_checker.dart';
 import '../widgets/vehicle_card.dart';
 import 'add_vehicle_screen.dart';
 import 'settings_screen.dart';
@@ -145,13 +146,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          // Check if user can add more vehicles
+          final canAdd = await VehicleLimitChecker.checkLimitAndShowPaywall(
             context,
-            MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
+            ref,
           );
+
+          if (canAdd && context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddVehicleScreen(), // ← Added const
+              ),
+            );
+          }
         },
         child: const Icon(Icons.add),
       ),

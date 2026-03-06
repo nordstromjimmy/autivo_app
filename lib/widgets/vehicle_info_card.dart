@@ -91,7 +91,7 @@ class VehicleInfoCard extends StatelessWidget {
                   color: vehicle.isVerified
                       ? _getVerificationColor(
                           vehicle.verificationLevel,
-                        ).withValues(alpha: 0.1)
+                        ).withValues(alpha: 0.0)
                       : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
