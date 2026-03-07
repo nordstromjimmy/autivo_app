@@ -8,6 +8,7 @@ import '../providers/combined_premium_provider.dart';
 import '../providers/purchase_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/premium_features.dart';
 import '../utils/user_session_tracker.dart';
 import '../widgets/premium_status_card.dart';
 import 'auth/sign_in_screen.dart';
@@ -197,7 +198,7 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () =>
                 _openUrl(context, 'https://autivo.se/integritetspolicy'),
           ),
-          //PremiumDebugWidget(),
+          PremiumDebugWidget(),
         ],
       ),
     );
@@ -392,7 +393,7 @@ class _SyncStatusTile extends ConsumerWidget {
   }
 }
 
-/* class PremiumDebugWidget extends ConsumerWidget {
+class PremiumDebugWidget extends ConsumerWidget {
   const PremiumDebugWidget({super.key});
 
   @override
@@ -526,4 +527,4 @@ class _SyncStatusTile extends ConsumerWidget {
       ),
     );
   }
-} */
+}

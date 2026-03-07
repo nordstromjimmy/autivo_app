@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/maintenance_provider.dart';
 import '../providers/vehicle_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/sync_manager.dart';
@@ -86,7 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Consumer(
             builder: (context, ref, _) {
               final syncManager = ref.read(syncManagerProvider);
-              final count = syncManager.totalPendingCount;
+              final count = ref.watch(pendingSyncCountProvider);
 
               if (count > 0) {
                 return IconButton(

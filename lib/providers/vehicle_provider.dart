@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vehicle.dart';
 import '../repositories/vehicle_repository.dart';
+import 'maintenance_provider.dart';
 
 // Provider for the vehicle repository
 final vehicleRepositoryProvider = Provider((ref) => VehicleRepository());
@@ -23,24 +24,30 @@ class VehiclesNotifier extends Notifier<List<Vehicle>> {
   Future<void> addVehicle(Vehicle vehicle) async {
     await _repository.add(vehicle);
     state = _repository.getAll();
+    ref.invalidate(pendingSyncCountProvider);
   }
 
   /// Update existing vehicle
   Future<void> updateVehicle(Vehicle vehicle) async {
     await _repository.update(vehicle);
     state = _repository.getAll();
+    ref.invalidate(pendingSyncCountProvider);
   }
 
   /// Delete vehicle
   Future<bool> deleteVehicle(String vehicleId) async {
     final deleted = await _repository.delete(vehicleId);
-    if (deleted) state = _repository.getAll();
+    if (deleted) {
+      state = _repository.getAll();
+      ref.invalidate(pendingSyncCountProvider);
+    }
     return deleted;
   }
 
   /// Refresh vehicles from local storage
   void refresh() {
     state = _repository.getAll();
+    ref.invalidate(pendingSyncCountProvider);
   }
 
   /// Get count of vehicles needing sync

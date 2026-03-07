@@ -113,25 +113,49 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
 
   void _saveRecord() {
     if (_formKey.currentState!.validate()) {
-      final record = MaintenanceRecord(
-        id: isEditMode ? widget.existingRecord!.id : const Uuid().v4(),
-        vehicleId: widget.vehicleId,
-        date: _selectedDate,
-        type: _selectedType,
-        description: _descriptionController.text.trim(),
-        mileage: _mileageController.text.isNotEmpty
-            ? int.tryParse(_mileageController.text)
-            : null,
-        cost: _costController.text.isNotEmpty
-            ? double.tryParse(_costController.text)
-            : null,
-        location: _locationController.text.isNotEmpty
-            ? _locationController.text.trim()
-            : null,
-        createdAt: isEditMode ? widget.existingRecord!.createdAt : null,
-      );
+      final MaintenanceRecord record;
 
-      ref.read(maintenanceNotifierProvider.notifier).addRecord(record);
+      if (isEditMode) {
+        record = widget.existingRecord!.copyWith(
+          date: _selectedDate,
+          type: _selectedType,
+          description: _descriptionController.text.trim(),
+          mileage: _mileageController.text.isNotEmpty
+              ? int.tryParse(_mileageController.text)
+              : null,
+          cost: _costController.text.isNotEmpty
+              ? double.tryParse(_costController.text)
+              : null,
+          location: _locationController.text.isNotEmpty
+              ? _locationController.text.trim()
+              : null,
+        );
+      } else {
+        record = MaintenanceRecord(
+          id: const Uuid().v4(),
+          vehicleId: widget.vehicleId,
+          date: _selectedDate,
+          type: _selectedType,
+          description: _descriptionController.text.trim(),
+          mileage: _mileageController.text.isNotEmpty
+              ? int.tryParse(_mileageController.text)
+              : null,
+          cost: _costController.text.isNotEmpty
+              ? double.tryParse(_costController.text)
+              : null,
+          location: _locationController.text.isNotEmpty
+              ? _locationController.text.trim()
+              : null,
+        );
+      }
+
+      // Save through provider
+      if (isEditMode) {
+        ref.read(maintenanceNotifierProvider.notifier).updateRecord(record);
+      } else {
+        ref.read(maintenanceNotifierProvider.notifier).addRecord(record);
+      }
+
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).clearSnackBars();

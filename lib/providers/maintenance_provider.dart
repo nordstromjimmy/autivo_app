@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/maintenance_record.dart';
 import '../repositories/maintenance_repository.dart';
+import 'vehicle_provider.dart';
 
 // Provider for the maintenance repository
 final maintenanceRepositoryProvider = Provider(
@@ -23,14 +24,15 @@ class MaintenanceNotifier extends Notifier<void> {
   /// Add a new maintenance record
   Future<void> addRecord(MaintenanceRecord record) async {
     await _repository.add(record);
-    // Invalidate the vehicle-specific provider to trigger rebuild
     ref.invalidate(maintenanceProvider(record.vehicleId));
+    ref.invalidate(pendingSyncCountProvider);
   }
 
   /// Update existing record
   Future<void> updateRecord(MaintenanceRecord record) async {
     await _repository.update(record);
     ref.invalidate(maintenanceProvider(record.vehicleId));
+    ref.invalidate(pendingSyncCountProvider);
   }
 
   /// Delete record
@@ -39,6 +41,7 @@ class MaintenanceNotifier extends Notifier<void> {
     await _repository.delete(recordId);
     if (record != null) {
       ref.invalidate(maintenanceProvider(record.vehicleId));
+      ref.invalidate(pendingSyncCountProvider);
     }
   }
 
@@ -75,4 +78,15 @@ final maintenanceProvider = Provider.family<List<MaintenanceRecord>, String>((
 ) {
   final repository = ref.watch(maintenanceRepositoryProvider);
   return repository.getByVehicleId(vehicleId);
+});
+
+/// Provider for total pending sync count (vehicles + maintenance)
+/// This is reactive - rebuilds when data changes
+final pendingSyncCountProvider = Provider<int>((ref) {
+  // Watch both repositories so this rebuilds when either changes
+  final vehicleRepo = ref.watch(vehicleRepositoryProvider);
+  final maintenanceRepo = ref.watch(maintenanceRepositoryProvider);
+
+  return vehicleRepo.getPendingSyncCount() +
+      maintenanceRepo.getPendingSyncCount();
 });
