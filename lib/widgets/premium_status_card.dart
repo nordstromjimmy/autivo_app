@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/purchase_provider.dart';
+import '../providers/combined_premium_provider.dart';
 import '../screens/paywall_screen.dart';
 
 class PremiumStatusCard extends ConsumerWidget {
@@ -8,7 +8,8 @@ class PremiumStatusCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final premiumStatus = ref.watch(premiumStatusProvider);
+    // Use COMBINED status (RevenueCat OR Supabase)
+    final premiumStatus = ref.watch(combinedPremiumStatusProvider);
     final theme = Theme.of(context);
 
     return premiumStatus.when(

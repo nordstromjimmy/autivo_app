@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SplashScreen extends StatefulWidget {
+import '../utils/premium_features.dart';
+
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -15,6 +18,9 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+
+    // Sync premium status in background
+    _syncPremiumStatus();
 
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1000),
@@ -28,12 +34,25 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate to home after 3 seconds (change to 2 later?)
+    // Navigate to home after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       }
     });
+  }
+
+  Future<void> _syncPremiumStatus() async {
+    try {
+      // Wait a bit for RevenueCat to initialize
+      await Future.delayed(const Duration(seconds: 2));
+
+      final premiumFeatures = ref.read(premiumFeaturesProvider);
+      await premiumFeatures.syncPremiumToSupabase();
+    } catch (e) {
+      print('Failed to sync premium on startup: $e');
+      // Don't block app startup if sync fails
+    }
   }
 
   @override

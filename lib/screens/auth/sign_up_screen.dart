@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/vehicle_provider.dart';
+import '../../providers/maintenance_provider.dart';
+import '../../providers/purchase_provider.dart';
+import '../../providers/combined_premium_provider.dart';
 import '../../services/sync_manager.dart';
 import '../../utils/custom_snackbar.dart';
+import '../../utils/user_session_tracker.dart';
+import '../home_screen.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -18,6 +24,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isProcessing = false;
 
   @override
   void dispose() {
@@ -28,41 +35,110 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _signUp() async {
-    if (_formKey.currentState!.validate()) {
-      // Show migration info if there's local data
+    if (_formKey.currentState!.validate() && !_isProcessing) {
+      setState(() {
+        _isProcessing = true;
+      });
+
+      try {
+        // Show migration info if there's local data
+        final syncManager = ref.read(syncManagerProvider);
+        if (syncManager.hasLocalDataToMigrate()) {
+          final confirm = await _showMigrationDialog();
+          if (confirm != true) {
+            setState(() {
+              _isProcessing = false;
+            });
+            return;
+          }
+        }
+
+        // Sign up
+        await ref
+            .read(authNotifierProvider.notifier)
+            .signUp(
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+            );
+
+        final authState = ref.read(authNotifierProvider);
+
+        await authState.when(
+          data: (_) async {
+            if (mounted) {
+              // Handle post-signup (sync data, migrate local vehicles)
+              await _handlePostSignup();
+
+              if (mounted) {
+                // Navigate using pushAndRemoveUntil (same as sign in)
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false, // Remove all previous routes
+                );
+
+                // Show success message
+                await Future.delayed(const Duration(milliseconds: 300));
+                if (mounted) {
+                  CustomSnackBar.showSuccess(
+                    context,
+                    'Konto skapat och data synkroniserad!',
+                  );
+                }
+              }
+            }
+          },
+          loading: () async {},
+          error: (error, _) async {
+            if (mounted) {
+              CustomSnackBar.showError(context, 'Registreringen misslyckades');
+            }
+          },
+        );
+      } catch (e) {
+        print('❌ Sign up error: $e');
+        if (mounted) {
+          CustomSnackBar.showError(context, 'Något gick fel: $e');
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+          });
+        }
+      }
+    }
+  }
+
+  /// Handle post-signup setup (similar to post-login)
+  Future<void> _handlePostSignup() async {
+    try {
       final syncManager = ref.read(syncManagerProvider);
-      if (syncManager.hasLocalDataToMigrate()) {
-        final confirm = await _showMigrationDialog();
-        if (confirm != true) return;
+      final currentUserId = syncManager.userId;
+
+      if (currentUserId == null) {
+        return;
       }
 
-      await ref
-          .read(authNotifierProvider.notifier)
-          .signUp(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      // Save user ID for session tracking
+      await UserSessionTracker.saveUserId(currentUserId);
 
-      final authState = ref.read(authNotifierProvider);
+      // Migrate local data to new account if needed
+      if (syncManager.hasLocalDataToMigrate()) {
+        await syncManager.migrateAnonymousData(currentUserId);
+      }
 
-      authState.when(
-        data: (_) {
-          if (mounted) {
-            Navigator.pop(context); // Close sign up screen
-            Navigator.pop(context); // Close sign in screen
-            CustomSnackBar.showSuccess(
-              context,
-              'Konto skapat och data synkroniserad!',
-            );
-          }
-        },
-        loading: () {},
-        error: (error, _) {
-          if (mounted) {
-            CustomSnackBar.showError(context, 'Registreringen misslyckades');
-          }
-        },
-      );
+      // Sync data
+      await syncManager.fullSync();
+
+      // Invalidate providers to refresh UI
+      ref.invalidate(vehiclesProvider);
+      ref.invalidate(maintenanceProvider);
+      ref.invalidate(premiumStatusProvider);
+      ref.invalidate(supabasePremiumStatusProvider);
+      ref.invalidate(combinedPremiumStatusProvider);
+    } catch (e) {
+      print('❌ Error during post-signup: $e');
+      rethrow;
     }
   }
 
@@ -94,7 +170,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState.isLoading;
+    final isLoading = authState.isLoading || _isProcessing;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Skapa konto')),
@@ -245,7 +321,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
                 // Benefits card
                 Card(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(

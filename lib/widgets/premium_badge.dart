@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/purchase_provider.dart';
+import '../providers/combined_premium_provider.dart';
 
 // Optional: Add this badge to your app bar or home screen header
 // to show premium status at a glance
@@ -10,7 +10,8 @@ class PremiumBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final premiumStatus = ref.watch(premiumStatusProvider);
+    // Use COMBINED status (RevenueCat OR Supabase)
+    final premiumStatus = ref.watch(combinedPremiumStatusProvider);
 
     return premiumStatus.when(
       data: (isPremium) {
@@ -47,23 +48,3 @@ class PremiumBadge extends ConsumerWidget {
     );
   }
 }
-
-// Example usage in home_screen.dart:
-/*
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Mina Fordon'),
-      actions: [
-        // Add premium badge to app bar
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Center(child: const PremiumBadge()),
-        ),
-      ],
-    ),
-    body: // ... your content
-  );
-}
-*/

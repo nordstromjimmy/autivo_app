@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_info_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/combined_premium_provider.dart';
+import '../providers/purchase_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/premium_features.dart';
+import '../utils/user_session_tracker.dart';
 import '../widgets/premium_status_card.dart';
 import 'auth/sign_in_screen.dart';
 
@@ -33,7 +38,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const PremiumStatusCard(), // ← Premium status display!
+          PremiumStatusCard(),
           const SizedBox(height: 24),
           // Account Section
           const _SectionHeader(title: 'Konto'),
@@ -71,7 +76,7 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text('Logga ut'),
-              onTap: () => _signOut(context, ref),
+              onTap: () => _handleLogout(context, ref),
             ),
           ] else ...[
             // Not signed in - show sign in option
@@ -193,6 +198,7 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () =>
                 _openUrl(context, 'https://autivo.se/integritetspolicy'),
           ),
+          //PremiumDebugWidget(),
         ],
       ),
     );
@@ -242,20 +248,21 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    final confirm = await showDialog<bool>(
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logga ut?'),
+        title: const Text('Logga ut'),
         content: const Text(
-          'Din data finns kvar lokalt på enheten. Du kan logga in igen för att synkronisera.',
+          'Är du säker på att du vill logga ut?\n\n'
+          'Din data finns kvar lokalt och synkas när du loggar in igen.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Avbryt'),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Logga ut'),
           ),
@@ -263,11 +270,41 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
 
-    if (confirm == true) {
-      await ref.read(authNotifierProvider.notifier).signOut();
+    if (shouldLogout != true) return;
+
+    try {
+      print('🔄 Starting logout...');
+
+      // Step 1: Sign out from Supabase
+      await Supabase.instance.client.auth.signOut();
+      print('✅ Signed out from Supabase');
+
+      // Step 2: Clear session (but NOT local data!)
+      await UserSessionTracker.clearUserId();
+      print('✅ Session cleared');
+
+      // Step 3: Invalidate premium providers only
+      // (vehicles stay cached for offline use)
+      ref.invalidate(premiumStatusProvider);
+      ref.invalidate(supabasePremiumStatusProvider);
+      ref.invalidate(combinedPremiumStatusProvider);
+      print('✅ Premium providers invalidated');
 
       if (context.mounted) {
-        CustomSnackBar.showInfo(context, 'Utloggad');
+        CustomSnackBar.showSuccess(context, 'Utloggad');
+
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+
+      print('✅ Logout complete');
+    } catch (e) {
+      print('❌ Error during logout: $e');
+
+      if (context.mounted) {
+        CustomSnackBar.showError(
+          context,
+          'Fel vid utloggning: ${e.toString()}',
+        );
       }
     }
   }
@@ -362,3 +399,139 @@ class _SyncStatusTile extends ConsumerWidget {
     );
   }
 }
+
+/* class PremiumDebugWidget extends ConsumerWidget {
+  const PremiumDebugWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final premiumFeatures = ref.watch(premiumFeaturesProvider);
+    final supabasePremiumAsync = ref.watch(supabasePremiumStatusProvider);
+    final user = Supabase.instance.client.auth.currentUser;
+
+    return Card(
+      color: Colors.black,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '🐛 Premium Debug Info (Users Table)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Divider(),
+
+            // User info
+            Text('Has Account: ${premiumFeatures.hasAccount}'),
+            Text('User ID: ${user?.id ?? "null"}'),
+            Text('Email: ${user?.email ?? "null"}'),
+
+            SizedBox(height: 8),
+
+            // Supabase users table status
+            Text(
+              'Supabase Users Table:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            supabasePremiumAsync.when(
+              data: (isPremium) => Text('is_premium: $isPremium'),
+              loading: () => Text('Loading...'),
+              error: (err, stack) =>
+                  Text('Error: $err', style: TextStyle(color: Colors.red)),
+            ),
+
+            SizedBox(height: 8),
+
+            // Premium status checks
+            Text(
+              'Premium Checks:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'RevenueCat: ${premiumFeatures.hasPremiumFromRevenueCat ? "✅" : "❌"}',
+            ),
+            Text(
+              'Supabase: ${premiumFeatures.hasPremiumFromSupabase ? "✅" : "❌"}',
+            ),
+            Text(
+              'Combined: ${premiumFeatures.hasPremium ? "✅ PREMIUM" : "❌ FREE"}',
+            ),
+
+            SizedBox(height: 8),
+
+            // Buttons
+            Wrap(
+              spacing: 8,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    // Refresh providers
+                    ref.invalidate(supabasePremiumStatusProvider);
+                    ref.invalidate(premiumStatusProvider);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Refreshed! Check values above.')),
+                    );
+                  },
+                  icon: Icon(Icons.refresh, size: 16),
+                  label: Text('Refresh', style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    // Fetch fresh data from database
+                    if (user == null) return;
+
+                    try {
+                      final response = await Supabase.instance.client
+                          .from('users')
+                          .select()
+                          .eq('id', user.id)
+                          .single();
+
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('Users Table Data'),
+                            content: SingleChildScrollView(
+                              child: Text(response.toString()),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('Close'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: Icon(Icons.table_chart, size: 16),
+                  label: Text('View DB', style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+} */

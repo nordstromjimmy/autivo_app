@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../repositories/vehicle_repository.dart';
 import '../repositories/maintenance_repository.dart';
 import '../providers/vehicle_provider.dart';
 import '../providers/maintenance_provider.dart';
+import '../repositories/vehicle_repository.dart';
 import '../services/supabase_config.dart';
 import '../services/sync_service.dart';
 

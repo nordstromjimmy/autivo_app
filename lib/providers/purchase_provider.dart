@@ -8,10 +8,10 @@ final revenueCatServiceProvider = Provider<RevenueCatService>((ref) {
 
 /// Provider to check if user has premium
 /// This is used throughout the app to gate features
-final isPremiumProvider = FutureProvider<bool>((ref) async {
+/* final isPremiumProvider = FutureProvider<bool>((ref) async {
   final service = ref.watch(revenueCatServiceProvider);
   return await service.isPremium();
-});
+}); */
 
 /// Provider that watches premium status and auto-refreshes
 final premiumStatusProvider =

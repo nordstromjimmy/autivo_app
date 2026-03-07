@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/purchase_provider.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/premium_features.dart';
+import 'auth/sign_up_screen.dart';
 
 class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key});
@@ -30,6 +33,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       _offerings = offerings;
       _isLoading = false;
     });
+  }
+
+  /// Check if user has an account (logged into Supabase)
+  bool get _hasAccount {
+    final user = Supabase.instance.client.auth.currentUser;
+    return user != null;
   }
 
   @override
@@ -133,12 +142,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 icon: Icons.cloud_done,
                 title: 'Molnsynkronisering',
                 description: 'Säkerhetskopiera automatiskt till molnet',
+                requiresAccount: true,
               ),
               _buildFeatureItem(
                 context,
                 icon: Icons.document_scanner,
                 title: 'OCR-verifiering',
                 description: 'Verifiera fordon med registreringsbevis',
+                requiresAccount: true,
               ),
               _buildFeatureItem(
                 context,
@@ -157,6 +168,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 icon: Icons.camera_alt,
                 title: 'Kvittofoton',
                 description: 'Bifoga kvitton och dokument',
+                requiresAccount: true,
               ),
               _buildFeatureItem(
                 context,
@@ -223,7 +235,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isPurchasing ? null : () => _purchase(package),
+                  onPressed: _isPurchasing
+                      ? null
+                      : () => _handlePurchase(package),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isDark
                         ? const Color(0xFF64B5F6)
@@ -244,9 +258,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                             ),
                           ),
                         )
-                      : const Text(
-                          'Köp Premium',
-                          style: TextStyle(
+                      : Text(
+                          _hasAccount ? 'Köp Premium' : 'Skapa konto först',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -290,6 +304,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     required IconData icon,
     required String title,
     required String description,
+    bool requiresAccount = false,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -320,11 +335,37 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (requiresAccount && !_hasAccount)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.orange),
+                        ),
+                        child: Text(
+                          'Konto',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -335,6 +376,54 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handlePurchase(Package package) async {
+    // Check if user has account
+    if (!_hasAccount) {
+      _showCreateAccountDialog();
+      return;
+    }
+
+    // Proceed with purchase
+    await _purchase(package);
+  }
+
+  void _showCreateAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.account_circle, color: Colors.orange),
+            const SizedBox(width: 8),
+            const Text('Konto krävs'),
+          ],
+        ),
+        content: const Text(
+          'Premium inkluderar molnsynkronisering, OCR-verifiering och kvittofoton som kräver ett konto.\n\n'
+          'Vill du skapa ett gratis konto nu?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Avbryt'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close paywall
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SignUpScreen()),
+              );
+            },
+            child: const Text('Skapa konto'),
           ),
         ],
       ),
@@ -352,11 +441,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     if (!mounted) return;
 
     if (result.success) {
-      // Refresh premium status
+      // Refresh premium status from RevenueCat
       ref.read(premiumStatusProvider.notifier).refresh();
 
+      // Sync premium status to Supabase
+      try {
+        final premiumFeatures = ref.read(premiumFeaturesProvider);
+        await premiumFeatures.syncPremiumToSupabase();
+      } catch (e) {
+        print('Failed to sync premium to Supabase: $e');
+        // Don't block user flow if Supabase sync fails
+      }
+
       CustomSnackBar.showSuccess(context, '🎉 Premium upplåst!');
-      Navigator.pop(context, true); // Return true to indicate success
+      Navigator.pop(context, true);
     } else {
       if (result.error != null && !result.error!.contains('avbrutet')) {
         CustomSnackBar.showError(context, result.error!);

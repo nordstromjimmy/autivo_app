@@ -32,9 +32,10 @@ class VehiclesNotifier extends Notifier<List<Vehicle>> {
   }
 
   /// Delete vehicle
-  Future<void> deleteVehicle(String vehicleId) async {
-    await _repository.delete(vehicleId);
-    state = _repository.getAll();
+  Future<bool> deleteVehicle(String vehicleId) async {
+    final deleted = await _repository.delete(vehicleId);
+    if (deleted) state = _repository.getAll();
+    return deleted;
   }
 
   /// Refresh vehicles from local storage

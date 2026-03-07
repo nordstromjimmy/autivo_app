@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/vehicle.dart';
 import '../providers/vehicle_provider.dart';
+import '../providers/auth_provider.dart'; // ← ADD THIS IMPORT
 import '../utils/constants.dart';
 import '../utils/custom_snackbar.dart';
 
@@ -161,7 +162,21 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     }
   }
 
+  // ✅ UPDATED: Block deletion of synced vehicles while offline
   void _deleteVehicle() async {
+    final vehicle = widget.existingVehicle!;
+    final isSignedIn = ref.read(isSignedInProvider);
+
+    // ✅ Check if deletion will be blocked (synced vehicle + offline)
+    if (vehicle.supabaseId != null && !isSignedIn) {
+      CustomSnackBar.showError(
+        context,
+        'Du måste vara online för att ta bort synkade fordon',
+      );
+      return; // Block deletion
+    }
+
+    // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -184,18 +199,21 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     );
 
     if (confirm == true && mounted) {
-      // Capture the notifier and deleted vehicle
-      final notifier = ref.read(vehiclesProvider.notifier);
-      final deletedVehicle = widget.existingVehicle!;
-
       // Delete the vehicle
-      notifier.deleteVehicle(deletedVehicle.id);
+      final notifier = ref.read(vehiclesProvider.notifier);
+      final deleted = await notifier.deleteVehicle(vehicle.id);
 
-      // Only pop once - close edit screen
-      Navigator.of(context).pop(); // ← ONLY ONE POP!
+      // ✅ Check if deletion succeeded
+      if (!deleted && mounted) {
+        // Deletion was blocked (shouldn't happen since we check above, but safety check)
+        CustomSnackBar.showError(context, 'Kunde inte ta bort fordon');
+        return;
+      }
+
+      // Successfully deleted - pop screen
+      Navigator.of(context).pop();
 
       // Show SnackBar with undo
-      // This will show on the VehicleDetailsScreen
       ScaffoldMessenger.of(context).clearSnackBars();
 
       final messenger = ScaffoldMessenger.of(context);
@@ -209,7 +227,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
             onPressed: () {
               actionClicked = true;
               // Re-add the vehicle
-              notifier.addVehicle(deletedVehicle);
+              notifier.addVehicle(vehicle);
               messenger.removeCurrentSnackBar();
             },
           ),
@@ -419,7 +437,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                   onPressed: _deleteVehicle,
                   icon: const Icon(Icons.delete),
                   label: const Text('Ta bort fordon'),
-
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 16),

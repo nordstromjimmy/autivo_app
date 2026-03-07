@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/purchase_provider.dart';
+import '../../providers/combined_premium_provider.dart';
+import '../../providers/maintenance_provider.dart';
+import '../../providers/vehicle_provider.dart';
+import '../../services/sync_manager.dart';
+import '../../utils/clear_local_data.dart';
 import '../../utils/custom_snackbar.dart';
+import '../../utils/user_session_tracker.dart';
+import '../../utils/deletion_tracker.dart';
+import '../../services/sync_service.dart';
+import '../home_screen.dart';
 import 'sign_up_screen.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -16,6 +26,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isProcessing = false;
 
   @override
   void dispose() {
@@ -25,37 +36,136 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _signIn() async {
-    if (_formKey.currentState!.validate()) {
-      await ref
-          .read(authNotifierProvider.notifier)
-          .signIn(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+    if (_formKey.currentState!.validate() && !_isProcessing) {
+      setState(() {
+        _isProcessing = true;
+      });
 
-      final authState = ref.read(authNotifierProvider);
+      try {
+        // Sign in
+        await ref
+            .read(authNotifierProvider.notifier)
+            .signIn(
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+            );
 
-      authState.when(
-        data: (_) {
-          if (mounted) {
-            Navigator.pop(context);
-            CustomSnackBar.showSuccess(context, 'Inloggad!');
-          }
-        },
-        loading: () {},
-        error: (error, _) {
-          if (mounted) {
-            CustomSnackBar.showError(context, 'Inloggning misslyckades');
-          }
-        },
-      );
+        final authState = ref.read(authNotifierProvider);
+
+        await authState.when(
+          data: (_) async {
+            if (mounted) {
+              // Handle post-login sync
+              await _handlePostLogin();
+
+              if (mounted) {
+                // Navigate using pushAndRemoveUntil (cleaner than popUntil)
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false, // Remove all previous routes
+                );
+
+                // Show success message
+                await Future.delayed(const Duration(milliseconds: 300));
+                if (mounted) {
+                  CustomSnackBar.showSuccess(context, 'Inloggad!');
+                }
+              }
+            }
+          },
+          loading: () async {},
+          error: (error, _) async {
+            if (mounted) {
+              CustomSnackBar.showError(context, 'Inloggning misslyckades');
+            }
+          },
+        );
+      } catch (e) {
+        print('❌ Sign in error: $e');
+        if (mounted) {
+          CustomSnackBar.showError(context, 'Något gick fel: $e');
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+          });
+        }
+      }
     }
+  }
+
+  /// Simplified post-login with offline deletion handling
+  Future<void> _handlePostLogin() async {
+    try {
+      final syncManager = ref.read(syncManagerProvider);
+      final currentUserId = syncManager.userId;
+
+      if (currentUserId == null) {
+        return;
+      }
+
+      // Check if this is a different user
+      final isDifferentUser = UserSessionTracker.isDifferentUser(currentUserId);
+
+      if (isDifferentUser) {
+        // DIFFERENT USER - Clear everything
+
+        await clearAllLocalData();
+        await DeletionTracker.clearAll();
+      } else {
+        // SAME USER - Process offline deletions before sync
+        await _processOfflineDeletions();
+      }
+
+      // Save user ID
+      await UserSessionTracker.saveUserId(currentUserId);
+
+      // Sync data (merge local with cloud)
+      await syncManager.fullSync();
+
+      // Invalidate providers
+      ref.invalidate(vehiclesProvider);
+      ref.invalidate(maintenanceProvider);
+      ref.invalidate(premiumStatusProvider);
+      ref.invalidate(supabasePremiumStatusProvider);
+      ref.invalidate(combinedPremiumStatusProvider);
+    } catch (e) {
+      print('❌ Error during post-login: $e');
+      rethrow;
+    }
+  }
+
+  /// Process vehicles deleted while offline
+  Future<void> _processOfflineDeletions() async {
+    final deletedVehicleIds = DeletionTracker.getDeletedVehicles();
+
+    if (deletedVehicleIds.isEmpty) {
+      return;
+    }
+
+    print('🗑️ Processing ${deletedVehicleIds.length} offline deletions...');
+
+    final syncService = SyncService();
+
+    for (final vehicleId in deletedVehicleIds) {
+      try {
+        // Delete from cloud (if it exists there)
+        await syncService.deleteVehicle(vehicleId);
+      } catch (e) {
+        print('⚠️ Could not delete from cloud: $vehicleId - $e');
+        // Continue anyway - vehicle is already deleted locally
+      }
+    }
+
+    // Clear deletion tracker
+    await DeletionTracker.clearDeletedVehicles();
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState.isLoading;
+    final isLoading = authState.isLoading || _isProcessing;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Logga in')),

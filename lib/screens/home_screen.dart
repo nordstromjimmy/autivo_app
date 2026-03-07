@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/vehicle_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/vehicle_limit_checker.dart';
@@ -17,34 +18,61 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _hasAutoSynced = false;
+
   @override
   void initState() {
     super.initState();
 
     // Auto-sync on app start
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (mounted) {
-        final syncManager = ref.read(syncManagerProvider);
-
-        // Only sync if user is signed in
-        if (syncManager.isSignedIn) {
-          try {
-            // Full sync (pull then push)
-            // SyncManager automatically refreshes providers after sync
-            await syncManager.fullSync();
-          } catch (e) {
-            // Silent fail - don't bother user if sync fails on startup
-            debugPrint('Auto-sync failed: $e');
-          }
-        }
-      }
+      await _performAutoSync();
     });
+  }
+
+  /// Perform auto-sync if user is signed in
+  Future<void> _performAutoSync() async {
+    if (!mounted) return;
+
+    final syncManager = ref.read(syncManagerProvider);
+
+    // Only sync if user is signed in
+    if (syncManager.isSignedIn) {
+      try {
+        _hasAutoSynced = true;
+
+        // Full sync (pull then push)
+        await syncManager.fullSync();
+
+        print('✅ Auto-sync completed');
+      } catch (e) {
+        // Silent fail - don't bother user if sync fails on startup
+        debugPrint('Auto-sync failed: $e');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final vehicles = ref.watch(vehiclesProvider);
     final syncManager = ref.read(syncManagerProvider);
+
+    // CRITICAL: Listen for auth state changes
+    // When user logs in, trigger a sync
+    ref.listen<AsyncValue<void>>(authNotifierProvider, (previous, next) {
+      next.whenData((_) async {
+        // User just logged in - sync immediately
+        if (syncManager.isSignedIn && !_hasAutoSynced) {
+          print('🔄 Auth changed - triggering sync...');
+          await _performAutoSync();
+
+          // Force rebuild after sync
+          if (mounted) {
+            setState(() {});
+          }
+        }
+      });
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -161,9 +189,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (canAdd && context.mounted) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const AddVehicleScreen(), // ← Added const
-              ),
+              MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
             );
           }
         },
@@ -174,6 +200,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// Handle pull-to-refresh
   Future<void> _handleRefresh(SyncManager syncManager) async {
+    // Reset auto-sync flag so we can sync again
+    _hasAutoSynced = false;
+
     // Only sync if user is signed in
     if (!syncManager.isSignedIn) {
       // Show message that sync requires sign in

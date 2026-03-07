@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 import '../models/vehicle.dart';
 import '../services/supabase_config.dart';
 import '../services/sync_service.dart';
+import '../utils/deletion_tracker.dart';
 
 class VehicleRepository {
   static const String boxName = 'vehicles';
@@ -59,17 +60,24 @@ class VehicleRepository {
   }
 
   /// Delete vehicle
-  Future<void> delete(String vehicleId) async {
+  Future<bool> delete(String vehicleId) async {
     final vehicle = getById(vehicleId);
-    if (vehicle == null) return;
+    if (vehicle == null) return false;
 
-    // Delete from Hive first
+    // Block if synced and offline
+    if (vehicle.supabaseId != null && !SupabaseConfig.isSignedIn) {
+      return false;
+    }
+
+    // Delete normally
     await _box.delete(vehicleId);
 
-    // Delete from cloud if synced
-    if (vehicle.supabaseId != null && SupabaseConfig.isSignedIn) {
+    // Delete from cloud if online
+    if (SupabaseConfig.isSignedIn && vehicle.supabaseId != null) {
       await _syncService.deleteVehicle(vehicleId);
     }
+
+    return true;
   }
 
   // ==================== SYNC OPERATIONS ====================
@@ -108,28 +116,52 @@ class VehicleRepository {
     return syncedCount;
   }
 
-  /// Pull vehicles from cloud and merge with local
+  /// Pull vehicles from cloud and sync with local
   Future<void> pullFromCloud() async {
     if (!SupabaseConfig.isSignedIn) return;
 
     try {
       final cloudVehicles = await _syncService.downloadVehicles();
 
+      // Get cloud vehicle IDs
+      final cloudVehicleIds = cloudVehicles
+          .map((data) => data['id'] as String)
+          .toSet();
+
+      // Get local vehicle IDs
+      final localVehicleIds = _box.keys.toSet();
+
+      // STEP 1: Remove local vehicles not in cloud
+      // BUT preserve vehicles that need to be uploaded (needsSync: true)
+      for (final localId in localVehicleIds) {
+        if (!cloudVehicleIds.contains(localId)) {
+          final localVehicle = _box.get(localId);
+
+          // Don't delete if it needs to be uploaded!
+          if (localVehicle != null && localVehicle.needsSync) {
+            continue; // Skip deletion
+          }
+
+          // Vehicle was deleted from cloud (or other device) - remove it
+          await _box.delete(localId);
+        }
+      }
+
+      // STEP 2: Add or merge vehicles from cloud
       for (final data in cloudVehicles) {
         final cloudVehicle = _vehicleFromMap(data);
         final localVehicle = _box.get(cloudVehicle.id);
 
         if (localVehicle == null) {
-          // New vehicle from cloud - add it
           await _box.put(cloudVehicle.id, cloudVehicle);
         } else {
-          // Vehicle exists locally - merge
           final merged = _mergeVehicles(localVehicle, cloudVehicle);
           await _box.put(merged.id, merged);
         }
       }
     } catch (e) {
-      print('Failed to pull vehicles from cloud: $e');
+      print('Failed to pull from cloud: $e');
+      rethrow;
     }
   }
 
