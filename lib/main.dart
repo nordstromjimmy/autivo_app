@@ -3,11 +3,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:mina_fordon/services/revenuecat_config.dart';
 import 'models/checklist_state.dart';
 import 'models/vehicle.dart';
 import 'models/maintenance_record.dart';
 import 'screens/home_screen.dart';
+import 'services/revenue_cat_service.dart';
 import 'services/supabase_config.dart';
 import 'utils/theme.dart';
 import 'screens/splash_screen.dart';
@@ -34,7 +34,8 @@ void main() async {
 
   await SupabaseConfig.initialize();
 
-  await RevenuecatConfig.initialize();
+  const revenueCatApiKey = 'goog_rACkxKFNfcoLyHBphVvdqdTuHdz';
+  await RevenueCatService().initialize(revenueCatApiKey);
 
   runApp(const ProviderScope(child: MyApp()));
 }

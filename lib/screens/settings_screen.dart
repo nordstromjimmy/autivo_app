@@ -5,6 +5,7 @@ import '../providers/app_info_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
+import '../widgets/premium_status_card.dart';
 import 'auth/sign_in_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -20,6 +21,20 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Inställningar')),
       body: ListView(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'Premium',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const PremiumStatusCard(), // ← Premium status display!
+          const SizedBox(height: 24),
           // Account Section
           const _SectionHeader(title: 'Konto'),
 

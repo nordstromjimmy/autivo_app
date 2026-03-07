@@ -4,6 +4,7 @@ import '../providers/vehicle_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/vehicle_limit_checker.dart';
+import '../widgets/premium_badge.dart';
 import '../widgets/vehicle_card.dart';
 import 'add_vehicle_screen.dart';
 import 'settings_screen.dart';
@@ -49,8 +50,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('Mina Fordon'),
         elevation: 0,
-        centerTitle: true,
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(child: const PremiumBadge()),
+          ),
           Consumer(
             builder: (context, ref, _) {
               final syncManager = ref.read(syncManagerProvider);
@@ -82,6 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                 );
               }
+
               return const SizedBox();
             },
           ),
