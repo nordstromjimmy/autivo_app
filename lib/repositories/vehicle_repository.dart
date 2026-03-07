@@ -2,7 +2,6 @@ import 'package:hive/hive.dart';
 import '../models/vehicle.dart';
 import '../services/supabase_config.dart';
 import '../services/sync_service.dart';
-import '../utils/deletion_tracker.dart';
 
 class VehicleRepository {
   static const String boxName = 'vehicles';
@@ -20,10 +19,11 @@ class VehicleRepository {
 
   /// Get vehicle by ID
   Vehicle? getById(String id) {
-    return _box.values.firstWhere(
-      (v) => v.id == id,
-      orElse: () => throw Exception('Vehicle not found'),
-    );
+    try {
+      return _box.values.firstWhere((v) => v.id == id);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Add a new vehicle

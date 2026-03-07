@@ -43,25 +43,6 @@ class VehiclesNotifier extends Notifier<List<Vehicle>> {
     state = _repository.getAll();
   }
 
-  /// Sync pending changes to cloud
-  Future<int> syncPending() async {
-    final count = await _repository.syncPending();
-    state = _repository.getAll(); // Refresh after sync
-    return count;
-  }
-
-  /// Pull vehicles from cloud
-  Future<void> pullFromCloud() async {
-    await _repository.pullFromCloud();
-    state = _repository.getAll(); // Refresh after pull
-  }
-
-  /// Full sync (pull then push)
-  Future<void> fullSync() async {
-    await pullFromCloud();
-    await syncPending();
-  }
-
   /// Get count of vehicles needing sync
   int get pendingSyncCount => _repository.getPendingSyncCount();
 

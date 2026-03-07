@@ -9,8 +9,6 @@ import '../../services/sync_manager.dart';
 import '../../utils/clear_local_data.dart';
 import '../../utils/custom_snackbar.dart';
 import '../../utils/user_session_tracker.dart';
-import '../../utils/deletion_tracker.dart';
-import '../../services/sync_service.dart';
 import '../home_screen.dart';
 import 'sign_up_screen.dart';
 
@@ -110,17 +108,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
       if (isDifferentUser) {
         // DIFFERENT USER - Clear everything
-
         await clearAllLocalData();
-        await DeletionTracker.clearAll();
-      } else {
-        // SAME USER - Process offline deletions before sync
-        await _processOfflineDeletions();
       }
 
       // Save user ID
       await UserSessionTracker.saveUserId(currentUserId);
-
       // Sync data (merge local with cloud)
       await syncManager.fullSync();
 
@@ -134,32 +126,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       print('❌ Error during post-login: $e');
       rethrow;
     }
-  }
-
-  /// Process vehicles deleted while offline
-  Future<void> _processOfflineDeletions() async {
-    final deletedVehicleIds = DeletionTracker.getDeletedVehicles();
-
-    if (deletedVehicleIds.isEmpty) {
-      return;
-    }
-
-    print('🗑️ Processing ${deletedVehicleIds.length} offline deletions...');
-
-    final syncService = SyncService();
-
-    for (final vehicleId in deletedVehicleIds) {
-      try {
-        // Delete from cloud (if it exists there)
-        await syncService.deleteVehicle(vehicleId);
-      } catch (e) {
-        print('⚠️ Could not delete from cloud: $vehicleId - $e');
-        // Continue anyway - vehicle is already deleted locally
-      }
-    }
-
-    // Clear deletion tracker
-    await DeletionTracker.clearDeletedVehicles();
   }
 
   @override

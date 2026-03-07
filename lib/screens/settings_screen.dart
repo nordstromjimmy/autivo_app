@@ -8,7 +8,6 @@ import '../providers/combined_premium_provider.dart';
 import '../providers/purchase_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
-import '../utils/premium_features.dart';
 import '../utils/user_session_tracker.dart';
 import '../widgets/premium_status_card.dart';
 import 'auth/sign_in_screen.dart';
@@ -273,30 +272,23 @@ class SettingsScreen extends ConsumerWidget {
     if (shouldLogout != true) return;
 
     try {
-      print('🔄 Starting logout...');
-
       // Step 1: Sign out from Supabase
       await Supabase.instance.client.auth.signOut();
-      print('✅ Signed out from Supabase');
 
       // Step 2: Clear session (but NOT local data!)
       await UserSessionTracker.clearUserId();
-      print('✅ Session cleared');
 
       // Step 3: Invalidate premium providers only
       // (vehicles stay cached for offline use)
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
-      print('✅ Premium providers invalidated');
 
       if (context.mounted) {
         CustomSnackBar.showSuccess(context, 'Utloggad');
 
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
-
-      print('✅ Logout complete');
     } catch (e) {
       print('❌ Error during logout: $e');
 
