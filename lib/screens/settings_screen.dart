@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_info_provider.dart';
@@ -13,6 +15,7 @@ import '../utils/premium_features.dart';
 import '../utils/user_session_tracker.dart';
 import '../widgets/premium_status_card.dart';
 import 'auth/sign_in_screen.dart';
+import 'debug_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -199,7 +202,19 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () =>
                 _openUrl(context, 'https://autivo.se/integritetspolicy'),
           ),
-          PremiumDebugWidget(),
+          Divider(),
+          if (kDebugMode) ...[
+            ListTile(
+              leading: const Icon(Icons.bug_report),
+              title: const Text('Debug Tools'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DebugScreen()),
+                );
+              },
+            ),
+          ],
         ],
       ),
     );
@@ -286,7 +301,7 @@ class SettingsScreen extends ConsumerWidget {
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
 
-      // ✅ ADD THESE - Invalidate feature gate providers
+      // Invalidate feature gate providers
       ref.invalidate(premiumFeaturesProvider);
       ref.invalidate(userTierProvider);
       ref.invalidate(featureCheckerProvider);
@@ -394,142 +409,6 @@ class _SyncStatusTile extends ConsumerWidget {
               ),
             )
           : const Icon(Icons.check, color: Colors.green),
-    );
-  }
-}
-
-class PremiumDebugWidget extends ConsumerWidget {
-  const PremiumDebugWidget({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final premiumFeatures = ref.watch(premiumFeaturesProvider);
-    final supabasePremiumAsync = ref.watch(supabasePremiumStatusProvider);
-    final user = Supabase.instance.client.auth.currentUser;
-
-    return Card(
-      color: Colors.black,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '🐛 Premium Debug Info (Users Table)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Divider(),
-
-            // User info
-            Text('Has Account: ${premiumFeatures.hasAccount}'),
-            Text('User ID: ${user?.id ?? "null"}'),
-            Text('Email: ${user?.email ?? "null"}'),
-
-            SizedBox(height: 8),
-
-            // Supabase users table status
-            Text(
-              'Supabase Users Table:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            supabasePremiumAsync.when(
-              data: (isPremium) => Text('is_premium: $isPremium'),
-              loading: () => Text('Loading...'),
-              error: (err, stack) =>
-                  Text('Error: $err', style: TextStyle(color: Colors.red)),
-            ),
-
-            SizedBox(height: 8),
-
-            // Premium status checks
-            Text(
-              'Premium Checks:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'RevenueCat: ${premiumFeatures.hasPremiumFromRevenueCat ? "✅" : "❌"}',
-            ),
-            Text(
-              'Supabase: ${premiumFeatures.hasPremiumFromSupabase ? "✅" : "❌"}',
-            ),
-            Text(
-              'Combined: ${premiumFeatures.hasPremium ? "✅ PREMIUM" : "❌ FREE"}',
-            ),
-
-            SizedBox(height: 8),
-
-            // Buttons
-            Wrap(
-              spacing: 8,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    // Refresh providers
-                    ref.invalidate(supabasePremiumStatusProvider);
-                    ref.invalidate(premiumStatusProvider);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Refreshed! Check values above.')),
-                    );
-                  },
-                  icon: Icon(Icons.refresh, size: 16),
-                  label: Text('Refresh', style: TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    // Fetch fresh data from database
-                    if (user == null) return;
-
-                    try {
-                      final response = await Supabase.instance.client
-                          .from('users')
-                          .select()
-                          .eq('id', user.id)
-                          .single();
-
-                      if (context.mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('Users Table Data'),
-                            content: SingleChildScrollView(
-                              child: Text(response.toString()),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text('Close'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  icon: Icon(Icons.table_chart, size: 16),
-                  label: Text('View DB', style: TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
