@@ -6,6 +6,8 @@ import '../providers/vehicle_provider.dart';
 import '../services/verification_service.dart';
 import '../services/photo_service.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/feature_checker.dart';
+import 'auth/sign_up_screen.dart';
 
 class VehicleVerificationScreen extends ConsumerStatefulWidget {
   final Vehicle vehicle;
@@ -123,56 +125,130 @@ class _VehicleVerificationScreenState
   Widget _buildVerificationOption(BuildContext context, Vehicle vehicle) {
     final isVerified = vehicle.isVerified;
 
-    return Card(
-      child: InkWell(
-        onTap: isVerified ? null : () => _showVerificationOptions(context),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isVerified
-                      ? Colors.green
-                      : Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.camera_alt,
-                  color: isVerified ? Colors.white : Colors.orange,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Själv-verifiering',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
+    return Consumer(
+      builder: (context, ref, _) {
+        final checker = ref.watch(featureCheckerProvider);
+        final canVerify = checker.hasAccount; // Verification requires account
+
+        return Card(
+          child: InkWell(
+            onTap: isVerified
+                ? null
+                : () {
+                    // Check if user has access
+                    if (!canVerify) {
+                      // Show account required dialog
+                      _showAccountRequiredForVerification(context);
+                      return;
+                    }
+
+                    // User has account - proceed
+                    _showVerificationOptions(context);
+                  },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isVerified
+                          ? Colors.green
+                          : Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Ladda upp foto på registreringsbevis',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: isVerified ? Colors.white : Colors.orange,
+                      size: 28,
                     ),
-                    const SizedBox(height: 4),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Själv-verifiering',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Ladda upp foto på registreringsbevis',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        if (!canVerify && !isVerified) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.lock, size: 14, color: Colors.orange),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Kräver konto',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (isVerified)
+                    const Icon(Icons.check_circle, color: Colors.green)
+                  else if (!canVerify)
+                    Icon(Icons.lock, color: Colors.orange[700])
+                  else
+                    Icon(Icons.chevron_right, color: Colors.grey[400]),
+                ],
               ),
-              if (isVerified)
-                const Icon(Icons.check_circle, color: Colors.green)
-              else
-                Icon(Icons.chevron_right, color: Colors.grey[400]),
-            ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showAccountRequiredForVerification(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.account_circle, color: Colors.orange[700]),
+            const SizedBox(width: 8),
+            const Text('Konto krävs'),
+          ],
         ),
+        content: const Text(
+          'För att verifiera ditt fordon behöver du ett konto.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Avbryt'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SignUpScreen()),
+              );
+            },
+            child: const Text('Skapa konto'),
+          ),
+        ],
       ),
     );
   }

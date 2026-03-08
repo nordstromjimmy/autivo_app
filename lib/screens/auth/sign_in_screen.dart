@@ -6,8 +6,12 @@ import '../../providers/combined_premium_provider.dart';
 import '../../providers/maintenance_provider.dart';
 import '../../providers/vehicle_provider.dart';
 import '../../services/sync_manager.dart';
+import '../../services/sync_service.dart';
 import '../../utils/clear_local_data.dart';
 import '../../utils/custom_snackbar.dart';
+import '../../utils/feature_checker.dart';
+import '../../utils/maintenance_deletion_tracker.dart';
+import '../../utils/premium_features.dart';
 import '../../utils/user_session_tracker.dart';
 import '../home_screen.dart';
 import 'sign_up_screen.dart';
@@ -109,23 +113,57 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (isDifferentUser) {
         // DIFFERENT USER - Clear everything
         await clearAllLocalData();
+        await MaintenanceDeletionTracker.clearAll();
+      } else {
+        // SAME USER - Process offline deletions before sync
+        await _processOfflineMaintenanceDeletions();
       }
 
       // Save user ID
       await UserSessionTracker.saveUserId(currentUserId);
+
       // Sync data (merge local with cloud)
       await syncManager.fullSync();
 
-      // Invalidate providers
+      // Invalidate ALL providers (including feature gates)
       ref.invalidate(vehiclesProvider);
       ref.invalidate(maintenanceProvider);
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
+
+      // Invalidate feature gate providers
+      ref.invalidate(premiumFeaturesProvider);
+      ref.invalidate(userTierProvider);
+      ref.invalidate(featureCheckerProvider);
     } catch (e) {
       print('❌ Error during post-login: $e');
       rethrow;
     }
+  }
+
+  /// Process maintenance records deleted while offline
+  Future<void> _processOfflineMaintenanceDeletions() async {
+    final deletedRecordIds = MaintenanceDeletionTracker.getDeletedRecords();
+
+    if (deletedRecordIds.isEmpty) {
+      return;
+    }
+
+    final syncService = SyncService();
+
+    for (final recordId in deletedRecordIds) {
+      try {
+        // Delete from cloud (if it exists there)
+        await syncService.deleteMaintenanceRecord(recordId);
+      } catch (e) {
+        print('⚠️ Could not delete maintenance from cloud: $recordId - $e');
+        // Continue anyway - record is already deleted locally
+      }
+    }
+
+    // Clear deletion tracker
+    await MaintenanceDeletionTracker.clearDeletedRecords();
   }
 
   @override
@@ -151,7 +189,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
+                    color: Theme.of(context).colorScheme.tertiary,
                     letterSpacing: 4,
                   ),
                 ),

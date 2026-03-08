@@ -9,6 +9,7 @@ import 'models/maintenance_record.dart';
 import 'screens/home_screen.dart';
 import 'services/revenue_cat_service.dart';
 import 'services/supabase_config.dart';
+import 'utils/maintenance_deletion_tracker.dart';
 import 'utils/theme.dart';
 import 'screens/splash_screen.dart';
 import 'utils/user_session_tracker.dart';
@@ -34,6 +35,7 @@ void main() async {
   await Hive.openBox<ChecklistState>('checklist');
 
   await UserSessionTracker.initialize();
+  await MaintenanceDeletionTracker.initialize();
 
   await SupabaseConfig.initialize();
 

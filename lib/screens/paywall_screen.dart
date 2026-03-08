@@ -345,26 +345,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ),
                       ),
                     ),
-                    if (requiresAccount && !_hasAccount)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.orange),
-                        ),
-                        child: Text(
-                          'Konto',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
                 const SizedBox(height: 4),

@@ -4,8 +4,11 @@ import '../models/maintenance_record.dart';
 import '../providers/maintenance_provider.dart';
 import '../providers/vehicle_provider.dart';
 import '../services/pdf_export_service.dart';
+import '../utils/feature_checker.dart';
+import '../utils/feature_gates.dart';
 import '../widgets/maintenance_list_item.dart';
 import '../widgets/maintenance_summary_card.dart';
+import 'paywall_screen.dart';
 
 class MaintenanceHistoryScreen extends ConsumerStatefulWidget {
   final String vehicleId;
@@ -33,6 +36,10 @@ class _MaintenanceHistoryScreenState
     final allRecords = ref.watch(maintenanceProvider(widget.vehicleId));
     final filteredRecords = _getFilteredAndSortedRecords(allRecords);
 
+    // Check if user can export PDF
+    final checker = ref.watch(featureCheckerProvider);
+    final canExportPDF = checker.canUse(AppFeature.exportMaintenancePDF);
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -54,17 +61,37 @@ class _MaintenanceHistoryScreenState
             tooltip: 'Fler alternativ',
             onSelected: (value) {
               if (value == 'export_pdf') {
+                // Check if user has premium
+                if (!canExportPDF) {
+                  _showPremiumRequired(context);
+                  return;
+                }
+
+                // User has premium - proceed with export
                 _exportPDF();
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_pdf',
                 child: Row(
                   children: [
-                    Icon(Icons.picture_as_pdf, size: 20),
-                    SizedBox(width: 12),
-                    Text('Exportera PDF'),
+                    Icon(
+                      Icons.picture_as_pdf,
+                      size: 20,
+                      color: canExportPDF ? null : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Exportera PDF',
+                      style: TextStyle(
+                        color: canExportPDF ? null : Colors.grey,
+                      ),
+                    ),
+                    if (!canExportPDF) ...[
+                      const Spacer(),
+                      Icon(Icons.lock, size: 16, color: Colors.orange[700]),
+                    ],
                   ],
                 ),
               ),
@@ -85,6 +112,57 @@ class _MaintenanceHistoryScreenState
             child: filteredRecords.isEmpty
                 ? _buildEmptyState()
                 : _buildRecordsList(filteredRecords),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPremiumRequired(BuildContext context) {
+    final checker = ref.read(featureCheckerProvider);
+    final message = checker.getUpgradeMessage(AppFeature.exportMaintenancePDF);
+    final cta = checker.getUpgradeCTA(AppFeature.exportMaintenancePDF);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.workspace_premium, color: Colors.amber[900]),
+            const SizedBox(width: 8),
+            const Text('Premium krävs'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message),
+            const SizedBox(height: 16),
+            Text(
+              'Skapa professionella PDF-rapporter med din kompletta servicehistorik.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Avbryt'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PaywallScreen()),
+              );
+            },
+            child: Text(cta),
           ),
         ],
       ),

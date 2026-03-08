@@ -11,6 +11,7 @@ class AppTheme {
         brightness: Brightness.light,
         secondary: Colors.white,
         onSurface: Colors.grey[800],
+        tertiary: Colors.blue,
       ),
       appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
       cardTheme: CardThemeData(
@@ -102,6 +103,7 @@ class AppTheme {
         surface: const Color(0xFF1E1E1E), // Dark surface
         secondary: const Color(0xFF2C2C2C),
         onSurface: Colors.grey[200],
+        tertiary: Colors.blue,
       ),
       scaffoldBackgroundColor: const Color(0xFF121212),
       appBarTheme: const AppBarTheme(

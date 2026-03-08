@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 import '../models/maintenance_record.dart';
 import '../services/supabase_config.dart';
 import '../services/sync_service.dart';
+import '../utils/maintenance_deletion_tracker.dart';
 
 class MaintenanceRepository {
   static const String boxName = 'maintenance_records';
@@ -63,9 +64,15 @@ class MaintenanceRepository {
     // Delete from Hive first
     await _box.delete(recordId);
 
-    // Delete from cloud if synced
-    if (record.supabaseId != null && SupabaseConfig.isSignedIn) {
-      await _syncService.deleteMaintenanceRecord(recordId);
+    // Handle cloud deletion
+    if (record.supabaseId != null) {
+      if (SupabaseConfig.isSignedIn) {
+        // Online - delete from cloud immediately
+        await _syncService.deleteMaintenanceRecord(recordId);
+      } else {
+        // Offline - track for later deletion
+        await MaintenanceDeletionTracker.trackDeletion(recordId);
+      }
     }
   }
 
@@ -93,7 +100,7 @@ class MaintenanceRepository {
       }
       return false;
     } catch (e) {
-      print('Failed to sync maintenance record ${record.id}: $e');
+      print('❌ Failed to sync maintenance record ${record.id}: $e');
       return false;
     }
   }
@@ -115,6 +122,7 @@ class MaintenanceRepository {
   }
 
   /// Pull records for a vehicle from cloud and merge
+  /// Now bidirectional: removes local records not in cloud (unless pending upload)
   Future<void> pullFromCloud(String vehicleId) async {
     if (!SupabaseConfig.isSignedIn) return;
 
@@ -123,6 +131,32 @@ class MaintenanceRepository {
         vehicleId,
       );
 
+      // Get cloud record IDs
+      final cloudRecordIds = cloudRecords
+          .map((data) => data['id'] as String)
+          .toSet();
+
+      // Get local record IDs for this vehicle
+      final localRecords = getByVehicleId(vehicleId);
+      final localRecordIds = localRecords.map((r) => r.id).toSet();
+
+      // STEP 1: Remove local records not in cloud
+      // BUT preserve records that need to be uploaded (needsSync: true)
+      for (final localId in localRecordIds) {
+        if (!cloudRecordIds.contains(localId)) {
+          final localRecord = _box.get(localId);
+
+          // Don't delete if it needs to be uploaded!
+          if (localRecord != null && localRecord.needsSync) {
+            continue; // Skip deletion - pending upload
+          }
+
+          // Record was deleted from cloud (or other device) - remove it
+          await _box.delete(localId);
+        }
+      }
+
+      // STEP 2: Add or merge records from cloud
       for (final data in cloudRecords) {
         final cloudRecord = _recordFromMap(data);
         final localRecord = _box.get(cloudRecord.id);
@@ -137,7 +171,8 @@ class MaintenanceRepository {
         }
       }
     } catch (e) {
-      print('Failed to pull maintenance records from cloud: $e');
+      print('❌ Failed to pull maintenance records from cloud: $e');
+      rethrow;
     }
   }
 

@@ -8,6 +8,7 @@ import '../providers/combined_premium_provider.dart';
 import '../providers/purchase_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/feature_checker.dart';
 import '../utils/premium_features.dart';
 import '../utils/user_session_tracker.dart';
 import '../widgets/premium_status_card.dart';
@@ -279,15 +280,19 @@ class SettingsScreen extends ConsumerWidget {
       // Step 2: Clear session (but NOT local data!)
       await UserSessionTracker.clearUserId();
 
-      // Step 3: Invalidate premium providers only
+      // Step 3: Invalidate ALL auth-related providers
       // (vehicles stay cached for offline use)
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
 
+      // ✅ ADD THESE - Invalidate feature gate providers
+      ref.invalidate(premiumFeaturesProvider);
+      ref.invalidate(userTierProvider);
+      ref.invalidate(featureCheckerProvider);
+
       if (context.mounted) {
         CustomSnackBar.showSuccess(context, 'Utloggad');
-
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {

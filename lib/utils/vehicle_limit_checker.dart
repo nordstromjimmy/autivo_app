@@ -3,46 +3,57 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/vehicle_provider.dart';
 import '../screens/auth/sign_up_screen.dart';
 import '../screens/paywall_screen.dart';
-import '../utils/premium_features.dart';
+import 'feature_gates.dart';
+import 'feature_checker.dart';
 
+/// Helper for checking vehicle limits and showing upgrade prompts
+///
+/// Now uses the centralized feature gate system!
+/// All tier logic is in feature_config.dart
 class VehicleLimitChecker {
-  // Free tier limit
-  static const int FREE_VEHICLE_LIMIT = 1;
-
   /// Check if user can add a vehicle and show appropriate screen if not
   /// Returns true if user can add, false otherwise
   static Future<bool> checkLimitAndShowPaywall(
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final premiumFeatures = ref.read(premiumFeaturesProvider);
+    final checker = ref.read(featureCheckerProvider);
     final vehicles = ref.read(vehiclesProvider);
     final currentCount = vehicles.length;
 
-    // Check if can add vehicle
-    final canAdd = await premiumFeatures.canAddVehicle(currentCount);
+    // Check if can add vehicle using new system
+    final canAdd = checker.canAddVehicle(currentCount);
 
     if (canAdd) {
-      return true; // User can add vehicle
+      return true; // User can add vehicle ✅
     }
 
-    // User has reached limit - show appropriate screen
+    // User has reached limit - show appropriate screen based on tier
     if (!context.mounted) return false;
 
-    // Check if they have an account
-    final hasAccount = premiumFeatures.hasAccount;
+    final tier = checker.currentTier;
 
-    if (hasAccount) {
-      // Has account but no premium - show paywall
-      return await _showPaywall(context);
-    } else {
-      // No account - need to create one first
-      return await _showAccountRequiredDialog(context);
+    switch (tier) {
+      case UserTier.unregistered:
+        // No account - show account creation prompt
+        return await _showAccountRequiredDialog(context, checker, currentCount);
+
+      case UserTier.free:
+        // Has account but no premium - show paywall
+        return await _showPaywall(context, checker, currentCount);
+
+      case UserTier.premium:
+        // Should never happen (premium = unlimited)
+        return true;
     }
   }
 
-  /// Show the paywall screen
-  static Future<bool> _showPaywall(BuildContext context) async {
+  /// Show the paywall screen for free users
+  static Future<bool> _showPaywall(
+    BuildContext context,
+    FeatureChecker checker,
+    int currentCount,
+  ) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (context) => const PaywallScreen()),
@@ -52,31 +63,48 @@ class VehicleLimitChecker {
     return result ?? false;
   }
 
-  /// Show dialog explaining account is required
-  static Future<bool> _showAccountRequiredDialog(BuildContext context) async {
+  /// Show dialog for unregistered users
+  static Future<bool> _showAccountRequiredDialog(
+    BuildContext context,
+    FeatureChecker checker,
+    int currentCount,
+  ) async {
+    final limitMessage = checker.getVehicleLimitMessage(currentCount);
+
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.account_circle, color: Colors.orange),
+            Icon(Icons.account_circle, color: Colors.orange[700]),
             const SizedBox(width: 8),
             const Text('Konto krävs'),
           ],
         ),
-        content: const Text(
-          'För att lägga till fler fordon och använda Premium-funktioner '
-          'behöver du ett konto.\n\n'
-          'Premium inkluderar molnsynkronisering, OCR-verifiering och andra '
-          'funktioner som kräver ett konto.\n\n'
-          'Vill du skapa ett gratis konto nu?',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(limitMessage),
+            const SizedBox(height: 16),
+            const Text(
+              'Med ett gratis konto får du:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ..._buildAccountBenefits(checker),
+            const SizedBox(height: 16),
+            const Text(
+              'Eller uppgradera till Premium för obegränsat antal fordon!',
+              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Avbryt'),
           ),
-
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context, false);
@@ -94,17 +122,42 @@ class VehicleLimitChecker {
     return result ?? false;
   }
 
-  /// Get a user-friendly message about the vehicle limit
-  static String getLimitMessage(int currentCount, bool isPremium) {
-    if (isPremium) {
-      return 'Du kan lägga till obegränsat antal fordon';
-    } else {
-      final remaining = FREE_VEHICLE_LIMIT - currentCount;
-      if (remaining > 0) {
-        return 'Du kan lägga till $remaining fordon till (gratis version)';
-      } else {
-        return 'Du har nått gränsen för gratis version. Uppgradera för obegränsat antal fordon.';
-      }
-    }
+  /// Build list of benefits for creating an account
+  static List<Widget> _buildAccountBenefits(FeatureChecker checker) {
+    // Get features gained by creating account
+    final features = checker.accountFeatures;
+
+    // Key features to highlight
+    final keyFeatures = [
+      AppFeature.cloudBackup,
+      AppFeature.cloudSync,
+      AppFeature.multiDeviceSync,
+      AppFeature.ocrScanning,
+    ];
+
+    return keyFeatures
+        .where((f) => features.contains(f))
+        .map(
+          (feature) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                Icon(
+                  FeatureMetadata.getIcon(feature),
+                  size: 16,
+                  color: Colors.green[700],
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    FeatureMetadata.getDisplayName(feature),
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+        .toList();
   }
 }

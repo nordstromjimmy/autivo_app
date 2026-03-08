@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../providers/auth_provider.dart';
 import '../providers/combined_premium_provider.dart';
 import '../providers/purchase_provider.dart';
 
@@ -12,8 +13,11 @@ class PremiumFeatures {
   // === CORE CHECKS ===
 
   /// Check if user has an active account (logged into Supabase)
+  /// NOW REACTIVE - watches currentUserProvider
   bool get hasAccount {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = ref.watch(
+      currentUserProvider,
+    ); // ✅ Watch provider, not direct read!
     return user != null;
   }
 
@@ -125,7 +129,6 @@ class PremiumFeatures {
 
       if (!shouldSync && currentSupabasePremium) {
         // Supabase has manual premium, don't overwrite
-        print('✅ Supabase has manual premium - not overwriting');
         return;
       }
 
@@ -141,8 +144,6 @@ class PremiumFeatures {
 
       // Refresh the Supabase premium status provider
       ref.invalidate(supabasePremiumStatusProvider);
-
-      print('✅ Premium synced to Supabase: $isPremiumFromRC');
     } catch (e) {
       print('❌ Error syncing premium to Supabase: $e');
     }
@@ -170,8 +171,6 @@ class PremiumFeatures {
       // Refresh the providers
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(premiumStatusProvider);
-
-      print('✅ Premium status updated to: $isPremium (manual)');
     } catch (e) {
       print('❌ Error setting Supabase premium: $e');
     }
@@ -238,6 +237,9 @@ class PremiumFeature {
 }
 
 /// Provider to access PremiumFeatures helper
+/// NOW REACTIVE - watches auth state changes
 final premiumFeaturesProvider = Provider<PremiumFeatures>((ref) {
+  // ✅ Watch auth state so this rebuilds when user logs in/out
+  ref.watch(currentUserProvider);
   return PremiumFeatures(ref);
 });
