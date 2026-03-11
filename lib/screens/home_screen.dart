@@ -6,7 +6,6 @@ import '../providers/auth_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/vehicle_limit_checker.dart';
-import '../widgets/premium_badge.dart';
 import '../widgets/vehicle_card.dart';
 import 'add_vehicle_screen.dart';
 import 'settings_screen.dart';
@@ -44,8 +43,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
         // Full sync (pull then push)
         await syncManager.fullSync();
-
-        print('✅ Auto-sync completed');
       } catch (e) {
         // Silent fail - don't bother user if sync fails on startup
         debugPrint('Auto-sync failed: $e');
@@ -64,7 +61,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       next.whenData((_) async {
         // User just logged in - sync immediately
         if (syncManager.isSignedIn && !_hasAutoSynced) {
-          print('🔄 Auth changed - triggering sync...');
           await _performAutoSync();
 
           // Force rebuild after sync
