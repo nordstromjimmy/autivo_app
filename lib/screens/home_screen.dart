@@ -80,10 +80,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: const Text('Mina Fordon'),
         elevation: 0,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(child: const PremiumBadge()),
-          ),
           Consumer(
             builder: (context, ref, _) {
               final syncManager = ref.read(syncManagerProvider);

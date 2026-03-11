@@ -73,9 +73,6 @@ class _VehicleVerificationScreenState
           _buildWhyVerifySection(context),
 
           const SizedBox(height: 32),
-
-          // Developer reset button
-          //if (currentVehicle.isVerified) _buildDeveloperResetSection(context),
         ],
       ),
     );
@@ -365,63 +362,6 @@ class _VehicleVerificationScreenState
       ),
     );
   }
-
-  /*   Widget _buildDeveloperResetSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Card(
-      color: isDark
-          ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
-          : Colors.red[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.bug_report,
-                  color: isDark ? Colors.red[300] : Colors.red[700],
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Utvecklarverktyg',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.red[300] : Colors.red[900],
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Nollställ verifiering för att testa verifieringsflödet igen.',
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? Colors.red[200] : Colors.red[800],
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _showResetConfirmation(),
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Nollställ verifiering'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: isDark ? Colors.red[300] : Colors.red,
-                side: BorderSide(
-                  color: isDark ? Colors.red[300]! : Colors.red[300]!,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  } */
 
   // === ACTIONS ===
 
@@ -778,39 +718,6 @@ class _VehicleVerificationScreenState
       CustomSnackBar.showInfo(context, 'Verifiering återställd');
     }
   }
-
-  /*   void _showResetConfirmation() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning, color: Colors.orange),
-            const SizedBox(width: 8),
-            const Text('Nollställ verifiering?'),
-          ],
-        ),
-        content: const Text(
-          'Detta kommer ta bort verifieringsstatus och återställa fordonet till overifierat läge.\n\n'
-          'Detta är endast för utveckling och testning.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Avbryt'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteVerification();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Nollställ'),
-          ),
-        ],
-      ),
-    );
-  } */
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month} ${date.year}';

@@ -365,49 +365,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Future<void> _handlePurchase(Package package) async {
     // Check if user has account
     if (!_hasAccount) {
-      _showCreateAccountDialog();
+      //Navigator.pop(context); // Close paywall
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SignUpScreen()),
+      );
       return;
     }
 
     // Proceed with purchase
     await _purchase(package);
-  }
-
-  void _showCreateAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.account_circle, color: Colors.orange),
-            const SizedBox(width: 8),
-            const Text('Konto krävs'),
-          ],
-        ),
-        content: const Text(
-          'Premium inkluderar molnsynkronisering, OCR-verifiering och kvittofoton som kräver ett konto.\n\n'
-          'Vill du skapa ett gratis konto nu?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Avbryt'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Close paywall
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SignUpScreen()),
-              );
-            },
-            child: const Text('Skapa konto'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _purchase(Package package) async {

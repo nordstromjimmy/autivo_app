@@ -45,7 +45,7 @@ class SyncManager {
     if (!isSignedIn) {
       return SyncResult(
         success: false,
-        message: 'Du är inte inloggad',
+        message: 'Logga in för att synkronisera',
         vehiclesSynced: 0,
         recordsSynced: 0,
       );

@@ -27,19 +27,7 @@ class PremiumBadge extends ConsumerWidget {
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.stars, color: Colors.white, size: 14),
-              SizedBox(width: 4),
-              Text(
-                'PREMIUM',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
+            children: [Icon(Icons.stars, color: Colors.white, size: 14)],
           ),
         );
       },

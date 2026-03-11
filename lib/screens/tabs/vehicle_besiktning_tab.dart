@@ -73,7 +73,7 @@ class VehicleBesiktningTab extends StatelessWidget {
         ActionCard(
           icon: Icons.warning_amber,
           title: 'Vanliga fel',
-          description: 'Generell list över vanligt förekommande fel',
+          description: 'Generell lista över vanligt förekommande fel',
           color: Colors.blue,
           onTap: () {
             Navigator.push(

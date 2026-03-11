@@ -73,7 +73,7 @@ class BesiktningChecklistScreen extends ConsumerWidget {
       margin: const EdgeInsets.all(16),
       color: isComplete
           ? Colors.green.withValues(alpha: 0.9)
-          : Colors.blueAccent.withValues(alpha: 0.8),
+          : Theme.of(context).primaryColor,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -107,7 +107,7 @@ class BesiktningChecklistScreen extends ConsumerWidget {
                     ? Colors.white.withValues(alpha: 0.3)
                     : Colors.grey[300],
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  isComplete ? Colors.white : Theme.of(context).primaryColor,
+                  isComplete ? Colors.white : Colors.blue,
                 ),
                 minHeight: 8,
               ),
@@ -120,7 +120,7 @@ class BesiktningChecklistScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Alla punkter kontrollerade! Din bil är redo för besiktning.',
+                      'Din bil är redo för besiktning!',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,

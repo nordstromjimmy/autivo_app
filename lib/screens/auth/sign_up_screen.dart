@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/vehicle_provider.dart';
-import '../../providers/maintenance_provider.dart';
 import '../../providers/purchase_provider.dart';
 import '../../providers/combined_premium_provider.dart';
 import '../../services/sync_manager.dart';
@@ -115,30 +114,34 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       final syncManager = ref.read(syncManagerProvider);
       final currentUserId = syncManager.userId;
 
-      if (currentUserId == null) {
-        return;
-      }
+      if (currentUserId == null) return;
+
+      // ✅ ADD THIS - Link RevenueCat to Supabase user
+      await _identifyRevenueCatUser(currentUserId);
 
       // Save user ID for session tracking
       await UserSessionTracker.saveUserId(currentUserId);
 
-      // Migrate local data to new account if needed
-      if (syncManager.hasLocalDataToMigrate()) {
-        await syncManager.migrateAnonymousData(currentUserId);
-      }
-
-      // Sync data
-      await syncManager.fullSync();
-
-      // Invalidate providers to refresh UI
-      ref.invalidate(vehiclesProvider);
-      ref.invalidate(maintenanceProvider);
-      ref.invalidate(premiumStatusProvider);
-      ref.invalidate(supabasePremiumStatusProvider);
-      ref.invalidate(combinedPremiumStatusProvider);
+      // ... rest of existing code ...
     } catch (e) {
       print('❌ Error during post-signup: $e');
       rethrow;
+    }
+  }
+
+  // ✅ ADD THIS METHOD
+  Future<void> _identifyRevenueCatUser(String supabaseUserId) async {
+    try {
+      // Link RevenueCat user to Supabase user ID
+      await Purchases.logIn(supabaseUserId);
+      print('✅ RevenueCat user identified: $supabaseUserId');
+
+      // Invalidate premium providers to refresh
+      ref.invalidate(premiumStatusProvider);
+      ref.invalidate(combinedPremiumStatusProvider);
+    } catch (e) {
+      print('⚠️ Error identifying RevenueCat user: $e');
+      // Don't throw - continue even if RevenueCat fails
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/purchase_provider.dart';
 import '../../providers/combined_premium_provider.dart';
@@ -103,11 +104,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       final syncManager = ref.read(syncManagerProvider);
       final currentUserId = syncManager.userId;
 
-      if (currentUserId == null) {
-        return;
-      }
+      if (currentUserId == null) return;
 
-      // Check if this is a different user
+      // ✅ ADD THIS - Link RevenueCat to Supabase user
+      await _identifyRevenueCatUser(currentUserId);
+
       final isDifferentUser = UserSessionTracker.isDifferentUser(currentUserId);
 
       if (isDifferentUser) {
@@ -139,6 +140,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     } catch (e) {
       print('❌ Error during post-login: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _identifyRevenueCatUser(String supabaseUserId) async {
+    try {
+      await Purchases.logIn(supabaseUserId);
+      print('✅ RevenueCat user identified: $supabaseUserId');
+
+      ref.invalidate(premiumStatusProvider);
+      ref.invalidate(combinedPremiumStatusProvider);
+    } catch (e) {
+      print('⚠️ Error identifying RevenueCat user: $e');
     }
   }
 

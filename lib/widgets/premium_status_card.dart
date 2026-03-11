@@ -32,7 +32,7 @@ class PremiumStatusCard extends ConsumerWidget {
 
     return Card(
       color: isDark
-          ? theme.colorScheme.primaryContainer.withOpacity(0.3)
+          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
           : Colors.green[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -41,10 +41,14 @@ class PremiumStatusCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
+                color: Color(0xFFFFA500),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.stars, color: Colors.green, size: 32),
+              child: const Icon(
+                Icons.stars,
+                color: Color(0xFFFFD700),
+                size: 32,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -60,8 +64,6 @@ class PremiumStatusCard extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.check_circle, color: Colors.green, size: 20),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -69,7 +71,7 @@ class PremiumStatusCard extends ConsumerWidget {
                     'Du har tillgång till alla funktioner',
                     style: TextStyle(
                       fontSize: 13,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -104,8 +106,8 @@ class PremiumStatusCard extends ConsumerWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF64B5F6).withOpacity(0.2)
-                      : theme.colorScheme.primary.withOpacity(0.1),
+                      ? const Color(0xFF64B5F6).withValues(alpha: 0.2)
+                      : theme.colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -133,7 +135,9 @@ class PremiumStatusCard extends ConsumerWidget {
                       'Lås upp alla funktioner',
                       style: TextStyle(
                         fontSize: 13,
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                     ),
                   ],
@@ -141,7 +145,7 @@ class PremiumStatusCard extends ConsumerWidget {
               ),
               Icon(
                 Icons.chevron_right,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -165,7 +169,7 @@ class PremiumStatusCard extends ConsumerWidget {
             Text(
               'Kontrollerar premium status...',
               style: TextStyle(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -186,7 +190,7 @@ class PremiumStatusCard extends ConsumerWidget {
               child: Text(
                 'Kunde inte hämta premium status',
                 style: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ),
