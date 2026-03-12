@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'models/checklist_state.dart';
 import 'models/vehicle.dart';
 import 'models/maintenance_record.dart';
+import 'providers/theme_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/revenue_cat_service.dart';
 import 'services/supabase_config.dart';
@@ -45,17 +46,19 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
       title: 'Autivo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       locale: const Locale('sv', 'SE'),
       supportedLocales: const [
         Locale('sv', 'SE'),

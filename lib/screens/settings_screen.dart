@@ -16,6 +16,7 @@ import '../utils/feature_checker.dart';
 import '../utils/premium_features.dart';
 import '../utils/user_session_tracker.dart';
 import '../widgets/premium_status_card.dart';
+import '../widgets/theme_selector.dart';
 import 'auth/sign_in_screen.dart';
 import 'debug_screen.dart';
 
@@ -62,6 +63,8 @@ class SettingsScreen extends ConsumerWidget {
               title: Text(currentUser.email ?? 'Okänd användare'),
               subtitle: const Text('Inloggad'),
             ),
+
+            const ThemeSelector(),
 
             // Sync section
             const Divider(),
