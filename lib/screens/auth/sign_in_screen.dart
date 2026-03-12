@@ -71,7 +71,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 // Show success message
                 await Future.delayed(const Duration(milliseconds: 300));
                 if (mounted) {
-                  CustomSnackBar.showSuccess(context, 'Inloggad!');
+                  CustomSnackBar.showSuccess(context, 'Inloggad');
                 }
               }
             }

@@ -114,11 +114,40 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Text(
-                '✨ Uppgradera till Premium',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Emoji - fixed size
+                  const Padding(
+                    padding: EdgeInsets.only(
+                      top: 4,
+                    ), // Align with text baseline
+                    child: Text('✨', style: TextStyle(fontSize: 36)),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Text - flexible, wraps on small screens
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Uppgradera till',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Premium',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Text(

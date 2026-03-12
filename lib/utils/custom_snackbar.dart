@@ -148,8 +148,6 @@ class _ChipContent extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
@@ -160,6 +158,8 @@ class _ChipContent extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(width: 12),
+          Icon(icon, color: iconColor, size: 20),
         ],
       ),
     );

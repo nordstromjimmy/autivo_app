@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/theme_provider.dart';
 
 /// Theme selector widget for settings screen
-class ThemeSelector extends ConsumerWidget {
+/* class ThemeSelector extends ConsumerWidget {
   const ThemeSelector({super.key});
 
   @override
@@ -62,8 +62,9 @@ class ThemeSelector extends ConsumerWidget {
       case AppThemeMode.system:
         return const Text('Följer telefonens inställning');
     }
+  } 
   }
-}
+*/
 
 /// Alternative: Simple ListTile version (more compact)
 class ThemeSelectorCompact extends ConsumerWidget {
@@ -90,6 +91,7 @@ class ThemeSelectorCompact extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        contentPadding: EdgeInsets.zero,
         title: const Text('Välj tema'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -113,50 +115,6 @@ class ThemeSelectorCompact extends ConsumerWidget {
             );
           }).toList(),
         ),
-      ),
-    );
-  }
-}
-
-/// Alternative: Segmented button version (iOS style)
-class ThemeSelectorSegmented extends ConsumerWidget {
-  const ThemeSelectorSegmented({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentTheme = ref.watch(themeNotifierProvider);
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Tema',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          SegmentedButton<AppThemeMode>(
-            segments: AppThemeMode.values.map((mode) {
-              return ButtonSegment<AppThemeMode>(
-                value: mode,
-                icon: Icon(mode.icon, size: 20),
-                label: Text(mode.displayName),
-              );
-            }).toList(),
-            selected: {currentTheme},
-            onSelectionChanged: (Set<AppThemeMode> selection) {
-              if (selection.isNotEmpty) {
-                ref
-                    .read(themeNotifierProvider.notifier)
-                    .setThemeMode(selection.first);
-              }
-            },
-            showSelectedIcon: false,
-          ),
-        ],
       ),
     );
   }

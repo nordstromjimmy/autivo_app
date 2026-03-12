@@ -64,7 +64,8 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: const Text('Inloggad'),
             ),
 
-            const ThemeSelector(),
+            // Change theme
+            const ThemeSelectorCompact(),
 
             // Sync section
             const Divider(),
