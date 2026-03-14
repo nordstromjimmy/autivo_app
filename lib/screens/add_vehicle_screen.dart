@@ -109,7 +109,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
       final Vehicle vehicle;
 
       if (isEditMode) {
-        // ✅ EDIT MODE: Use copyWith (preserves verification!)
+        // EDIT MODE: Use copyWith (preserves verification!)
         vehicle = widget.existingVehicle!.copyWith(
           registrationNumber: _regNumberController.text.toUpperCase().trim(),
           make: _makeController.text.trim(),
@@ -124,10 +124,10 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               : null,
           nextBesiktningDate: _nextBesiktningDate,
           ownershipStartDate: _ownershipStartDate,
-          // ✅ Verification automatically preserved!
+          // Verification automatically preserved!
         );
       } else {
-        // ✅ ADD MODE: Create new vehicle (no verification yet)
+        // ADD MODE: Create new vehicle (no verification yet)
         vehicle = Vehicle(
           id: const Uuid().v4(),
           registrationNumber: _regNumberController.text.toUpperCase().trim(),
@@ -162,16 +162,16 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     }
   }
 
-  // ✅ UPDATED: Block deletion of synced vehicles while offline
+  // UPDATED: Block deletion of synced vehicles while offline
   void _deleteVehicle() async {
     final vehicle = widget.existingVehicle!;
     final isSignedIn = ref.read(isSignedInProvider);
 
-    // ✅ Check if deletion will be blocked (synced vehicle + offline)
+    // Check if deletion will be blocked (synced vehicle + offline)
     if (vehicle.supabaseId != null && !isSignedIn) {
       CustomSnackBar.showError(
         context,
-        'Du måste vara online för att ta bort synkade fordon',
+        'Du måste vara inloggad för att ta bort synkade fordon',
       );
       return; // Block deletion
     }
@@ -203,7 +203,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
       final notifier = ref.read(vehiclesProvider.notifier);
       final deleted = await notifier.deleteVehicle(vehicle.id);
 
-      // ✅ Check if deletion succeeded
+      // Check if deletion succeeded
       if (!deleted && mounted) {
         // Deletion was blocked (shouldn't happen since we check above, but safety check)
         CustomSnackBar.showError(context, 'Kunde inte ta bort fordon');
@@ -258,9 +258,11 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               // Registration number
               TextFormField(
                 controller: _regNumberController,
+                maxLength: 20,
                 decoration: const InputDecoration(
                   labelText: 'Registreringsnummer *',
                   hintText: 'ABC123',
+                  counterText: '',
                 ),
                 textCapitalization: TextCapitalization.characters,
                 enabled: !isEditMode,
@@ -291,9 +293,11 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               // Make
               TextFormField(
                 controller: _makeController,
+                maxLength: 20,
                 decoration: const InputDecoration(
                   labelText: 'Märke *',
                   hintText: 'Volvo',
+                  counterText: '',
                   prefixIcon: Icon(Icons.directions_car),
                 ),
                 textCapitalization: TextCapitalization.words,
@@ -309,9 +313,11 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               // Model
               TextFormField(
                 controller: _modelController,
+                maxLength: 20,
                 decoration: const InputDecoration(
                   labelText: 'Modell *',
                   hintText: 'V70',
+                  counterText: '',
                   prefixIcon: Icon(Icons.car_crash),
                 ),
                 textCapitalization: TextCapitalization.words,
@@ -326,9 +332,11 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               // Year
               TextFormField(
                 controller: _yearController,
+                maxLength: 20,
                 decoration: const InputDecoration(
                   labelText: 'Årsmodell *',
                   hintText: '2015',
+                  counterText: '',
                   prefixIcon: Icon(Icons.calendar_today),
                 ),
                 keyboardType: TextInputType.number,
@@ -373,10 +381,12 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               // Current mileage
               TextFormField(
                 controller: _mileageController,
+                maxLength: 20,
                 decoration: const InputDecoration(
                   labelText: 'Nuvarande mätarställning',
                   hintText: '150000',
                   suffixText: 'km',
+                  counterText: '',
                   prefixIcon: Icon(Icons.speed),
                 ),
                 keyboardType: TextInputType.number,

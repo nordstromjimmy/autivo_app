@@ -327,6 +327,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                       // Description
                       TextFormField(
                         controller: _descriptionController,
+                        maxLength: 500,
                         decoration: const InputDecoration(
                           labelText: 'Beskrivning *',
                           hintText: 'T.ex. "Oljebyte och filter"',
@@ -369,9 +370,11 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                       // Location
                       TextFormField(
                         controller: _locationController,
+                        maxLength: 20,
                         decoration: const InputDecoration(
                           labelText: 'Plats/Verkstad',
                           hintText: 'T.ex. "Biltema Stockholm"',
+                          counterText: '',
                           prefixIcon: Icon(Icons.location_on),
                         ),
                         textCapitalization: TextCapitalization.words,
@@ -396,10 +399,12 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                           // Mileage
                           TextFormField(
                             controller: _mileageController,
+                            maxLength: 20,
                             decoration: const InputDecoration(
                               labelText: 'Mätarställning',
                               hintText: '15000',
                               suffixText: 'km',
+                              counterText: '',
                               prefixIcon: Icon(Icons.speed),
                             ),
                             keyboardType: TextInputType.number,
@@ -413,10 +418,12 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
                           // Cost
                           TextFormField(
                             controller: _costController,
+                            maxLength: 20,
                             decoration: const InputDecoration(
                               labelText: 'Kostnad',
                               hintText: '2500',
                               suffixText: 'kr',
+                              counterText: '',
                               prefixIcon: Icon(Icons.payments),
                             ),
                             keyboardType: const TextInputType.numberWithOptions(

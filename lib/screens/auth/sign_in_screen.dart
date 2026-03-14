@@ -146,7 +146,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _identifyRevenueCatUser(String supabaseUserId) async {
     try {
       await Purchases.logIn(supabaseUserId);
-      print('✅ RevenueCat user identified: $supabaseUserId');
 
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);

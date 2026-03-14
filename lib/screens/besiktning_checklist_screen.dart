@@ -17,7 +17,7 @@ class BesiktningChecklistScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Besiktnings-checklista'),
+        title: const Text('Besiktning - Checklista'),
         actions: [
           // Clear button
           IconButton(

@@ -33,33 +33,30 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Inställningar')),
       body: ListView(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              'Premium',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
+          if (isSignedIn) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Premium',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          PremiumStatusCard(),
-          const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            PremiumStatusCard(),
+            const SizedBox(height: 24),
+          ],
+
           // Account Section
           const _SectionHeader(title: 'Konto'),
 
           if (isSignedIn && currentUser != null) ...[
             // Signed in - show account info
             ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Theme.of(context).primaryColor,
-                child: Text(
-                  (currentUser.email ?? '?')[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
+              leading: Icon(Icons.person),
               title: Text(currentUser.email ?? 'Okänd användare'),
               subtitle: const Text('Inloggad'),
             ),

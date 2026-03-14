@@ -233,11 +233,9 @@ class DebugScreen extends ConsumerWidget {
 
       if (isAnonymous) {
         // Already anonymous - just switch to new anonymous ID
-        print('🔄 Switching from anonymous to new anonymous ID');
         await Purchases.logIn(newUserId);
       } else {
         // Identified user - log out first, then login with new ID
-        print('🔄 Logging out identified user, then creating new anonymous');
         await Purchases.logOut();
         await Purchases.logIn(newUserId);
       }

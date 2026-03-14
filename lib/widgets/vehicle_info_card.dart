@@ -84,22 +84,31 @@ class VehicleInfoCard extends StatelessWidget {
                   ),
                 );
               },
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                8,
+              ), // ✅ Match container radius
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: vehicle.isVerified
                       ? _getVerificationColor(
                           vehicle.verificationLevel,
-                        ).withValues(alpha: 0.0)
+                        ).withValues(
+                          alpha: 0.08,
+                        ) // ✅ Changed from 0.0 to 0.08 (subtle tint)
                       : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
+                    width: 1.5, // ✅ Increased from 1 to 1.5 for consistency
                     color: vehicle.isVerified
                         ? _getVerificationColor(
                             vehicle.verificationLevel,
-                          ).withValues(alpha: 0.3)
-                        : Colors.grey[300]!,
+                          ).withValues(
+                            alpha: 0.4,
+                          ) // ✅ Increased from 0.3 to 0.4
+                        : Colors
+                              .grey
+                              .shade300, // ✅ Use .shade300 instead of [300]!
                   ),
                 ),
                 child: Row(

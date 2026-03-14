@@ -134,7 +134,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     try {
       // Link RevenueCat user to Supabase user ID
       await Purchases.logIn(supabaseUserId);
-      print('✅ RevenueCat user identified: $supabaseUserId');
 
       // Invalidate premium providers to refresh
       ref.invalidate(premiumStatusProvider);

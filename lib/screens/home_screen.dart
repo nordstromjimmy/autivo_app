@@ -172,6 +172,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
+        elevation: 0,
         onPressed: () async {
           // Check if user can add more vehicles
           final canAdd = await VehicleLimitChecker.checkLimitAndShowPaywall(

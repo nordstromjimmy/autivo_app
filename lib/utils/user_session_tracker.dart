@@ -30,7 +30,6 @@ class UserSessionTracker {
     try {
       final box = await _ensureBoxOpen();
       await box.put(_userIdKey, userId);
-      print('✅ Saved user ID: $userId');
     } catch (e) {
       print('Error saving user ID: $e');
     }
@@ -41,7 +40,6 @@ class UserSessionTracker {
     try {
       final box = await _ensureBoxOpen();
       await box.delete(_userIdKey);
-      print('✅ Cleared user ID');
     } catch (e) {
       print('Error clearing user ID: $e');
     }

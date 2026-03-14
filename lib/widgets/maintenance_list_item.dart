@@ -144,7 +144,6 @@ class MaintenanceListItem extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Row(
                           children: [
-                            const SizedBox(width: 2),
                             Expanded(
                               child: Text(
                                 record.location!,

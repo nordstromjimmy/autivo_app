@@ -91,7 +91,7 @@ class VehicleBesiktningTab extends StatelessWidget {
         ActionCard(
           icon: Icons.location_on,
           title: 'Hitta besiktningsstation',
-          description: 'Boka tid på närmaste station',
+          description: 'Hitta din närmaste station',
           color: Colors.blue,
           onTap: () => _openBesiktningMap(context),
         ),
@@ -101,8 +101,9 @@ class VehicleBesiktningTab extends StatelessWidget {
 
   // Open Google Maps with search for car inspection stations
   Future<void> _openBesiktningMap(BuildContext context) async {
+    final String query = "Bilbesiktning";
     final Uri mapsUrl = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=Bilbesiktning',
+      'https://www.google.com/maps/search/?api=1&query=$query',
     );
 
     try {
