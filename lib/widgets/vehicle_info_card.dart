@@ -74,88 +74,95 @@ class VehicleInfoCard extends StatelessWidget {
 
             // Verification section
             const SizedBox(height: 12),
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        VehicleVerificationScreen(vehicle: vehicle),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(
-                8,
-              ), // ✅ Match container radius
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: vehicle.isVerified
-                      ? _getVerificationColor(
-                          vehicle.verificationLevel,
-                        ).withValues(
-                          alpha: 0.08,
-                        ) // ✅ Changed from 0.0 to 0.08 (subtle tint)
-                      : Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    width: 1.5, // ✅ Increased from 1 to 1.5 for consistency
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          VehicleVerificationScreen(vehicle: vehicle),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(
+                  12,
+                ), // Slightly more rounded
+                child: Ink(
+                  decoration: BoxDecoration(
                     color: vehicle.isVerified
                         ? _getVerificationColor(
                             vehicle.verificationLevel,
-                          ).withValues(
-                            alpha: 0.4,
-                          ) // ✅ Increased from 0.3 to 0.4
-                        : Colors
-                              .grey
-                              .shade300, // ✅ Use .shade300 instead of [300]!
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      vehicle.isVerified ? Icons.verified : Icons.verified_user,
-                      size: 20,
+                          ).withValues(alpha: 0.08)
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      width: 1.5,
                       color: vehicle.isVerified
-                          ? _getVerificationColor(vehicle.verificationLevel)
-                          : Colors.grey[600],
+                          ? _getVerificationColor(
+                              vehicle.verificationLevel,
+                            ).withValues(alpha: 0.4)
+                          : Theme.of(
+                              context,
+                            ).colorScheme.outline.withValues(alpha: 0.3),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            vehicle.isVerified ? 'Verifierad' : 'Ej verifierad',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                              color: vehicle.isVerified
-                                  ? _getVerificationColor(
-                                      vehicle.verificationLevel,
-                                    )
-                                  : Colors.grey[700],
-                            ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          vehicle.isVerified
+                              ? Icons.verified
+                              : Icons.verified_user,
+                          size: 20,
+                          color: vehicle.isVerified
+                              ? _getVerificationColor(vehicle.verificationLevel)
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                vehicle.isVerified
+                                    ? 'Verifierad'
+                                    : 'Ej verifierad',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: vehicle.isVerified
+                                      ? _getVerificationColor(
+                                          vehicle.verificationLevel,
+                                        )
+                                      : Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                vehicle.isVerified
+                                    ? vehicle.verificationBadge
+                                    : 'Tryck för att verifiera ägarskap',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            vehicle.isVerified
-                                ? vehicle.verificationBadge
-                                : 'Tryck för att verifiera ägarskap',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 20,
-                      color: Colors.grey[400],
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
