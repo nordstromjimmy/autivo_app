@@ -1,10 +1,14 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/maintenance/repositories/maintenance_repository.dart';
+import '../../../features/receipts/providers/receipt_provider.dart';
 import '../../../features/receipts/repositories/receipt_repository.dart';
 import '../../../features/vehicles/providers/vehicle_provider.dart';
 import '../../../features/maintenance/providers/maintenance_provider.dart';
 import '../../../features/vehicles/repositories/vehicle_repository.dart';
 import '../../config/supabase_config.dart';
+import '../../utils/helpers/custom_snackbar.dart';
 import 'sync_service.dart';
 
 // Provider for sync manager
@@ -82,7 +86,7 @@ class SyncManager {
       final receiptsSynced = await _receiptRepo.syncPending();
 
       // Step 4: Refresh providers to update UI
-      _refreshProviders();
+      _invalidateAllProviders();
 
       return SyncResult(
         success: true,
@@ -99,6 +103,68 @@ class SyncManager {
         recordsSynced: 0,
         receiptsSynced: 0,
       );
+    }
+  }
+
+  /// Perform full sync with UI feedback
+  /// This is the main entry point for all sync operations
+  Future<void> performFullSyncWithUI(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Synkroniserar...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // STEP 1: Migrate if needed
+      if (userId != null && hasLocalDataToMigrate()) {
+        await migrateAnonymousData(userId!);
+      }
+
+      // STEP 2: Sync
+      final result = await fullSync();
+
+      // STEP 3: Invalidate providers
+      _invalidateAllProviders();
+
+      // Close loading
+      if (context.mounted) Navigator.pop(context);
+
+      // Show result
+      if (context.mounted) {
+        if (result.success) {
+          if (result.totalSynced > 0) {
+            CustomSnackBar.showSuccess(context, result.toString());
+          } else {
+            CustomSnackBar.showSuccess(context, 'Allt synkroniserat');
+          }
+        } else {
+          CustomSnackBar.showError(context, result.message);
+        }
+      }
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+      if (context.mounted) {
+        CustomSnackBar.showError(context, 'Synkronisering misslyckades: $e');
+      }
     }
   }
 
@@ -120,7 +186,7 @@ class SyncManager {
       final receiptsSynced = await _receiptRepo.syncPending();
 
       // Refresh providers to update UI
-      _refreshProviders();
+      _invalidateAllProviders();
 
       return SyncResult(
         success: true,
@@ -162,7 +228,7 @@ class SyncManager {
       }
 
       // Refresh providers to update UI
-      _refreshProviders();
+      _invalidateAllProviders();
 
       return SyncResult(
         success: true,
@@ -189,9 +255,6 @@ class SyncManager {
     await _vehicleRepo.assignUserToAllVehicles(userId);
     await _maintenanceRepo.assignUserToAllRecords(userId);
     await _receiptRepo.assignUserToAllReceipts(userId);
-
-    // Upload everything to cloud
-    await pushOnly();
   }
 
   /// Check if user has any local data to migrate
@@ -214,25 +277,28 @@ class SyncManager {
 
     final needsMigration = hasVehicles || hasReceipts || hasMaintenance;
 
-    if (needsMigration) {
-      print('ℹ️ Found data needing migration:');
-      if (hasVehicles) print('  - Vehicles without userId');
-      if (hasReceipts) print('  - Receipts without userId');
-      if (hasMaintenance) print('  - Maintenance without userId');
-    }
-
     return needsMigration;
   }
 
   // ==================== HELPERS ====================
 
   /// Refresh providers to update UI after sync
-  void _refreshProviders() {
-    // Refresh vehicles provider
-    _ref.read(vehiclesProvider.notifier).refresh();
+  void _invalidateAllProviders() {
+    // Vehicles
+    _ref.invalidate(vehiclesProvider);
 
-    // Note: Maintenance and receipt providers refresh automatically when vehicles change
-    // because they use provider.family which is invalidated per vehicle
+    // Maintenance
+    _ref.invalidate(maintenanceProvider);
+
+    // Receipts
+    _ref.invalidate(receiptNotifierProvider);
+    _ref.invalidate(receiptByIdProvider);
+    _ref.invalidate(receiptsForVehicleProvider);
+    _ref.invalidate(receiptsForMaintenanceProvider);
+
+    // Sync status
+    _ref.invalidate(pendingSyncCountProvider);
+    _ref.invalidate(receiptPendingSyncCountProvider);
   }
 }
 

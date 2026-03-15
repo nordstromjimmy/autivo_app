@@ -5,7 +5,6 @@ import '../features/vehicles/providers/vehicle_provider.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../core/services/sync/sync_manager.dart';
 import '../core/utils/helpers/custom_snackbar.dart';
-import '../core/services/sync/sync_helper.dart';
 import '../features/premium/utils/vehicle_limit_checker.dart';
 import '../features/vehicles/widgets/vehicle_card.dart';
 import '../features/vehicles/screens/add_vehicle_screen.dart';
@@ -27,7 +26,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _performSync(BuildContext context, WidgetRef ref) async {
-    await SyncHelper.performFullSync(context, ref);
+    await ref.read(syncManagerProvider).performFullSyncWithUI(context, ref);
   }
 
   @override

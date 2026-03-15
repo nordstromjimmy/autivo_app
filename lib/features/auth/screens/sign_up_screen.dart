@@ -82,10 +82,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 // Show success message
                 await Future.delayed(const Duration(milliseconds: 300));
                 if (mounted) {
-                  CustomSnackBar.showSuccess(
-                    context,
-                    'Konto skapat och data synkroniserad!',
-                  );
+                  CustomSnackBar.showSuccess(context, 'Konto skapat!');
                 }
               }
             }

@@ -249,7 +249,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                   child: Container(
                     height: 250,
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: Colors.grey[800],
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: _buildImagePreview(),
@@ -289,7 +289,6 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
                         borderRadius: BorderRadius.circular(12),
                         child: InputDecorator(
                           decoration: const InputDecoration(
-                            labelText: 'Datum',
                             prefixIcon: Icon(Icons.calendar_today),
                           ),
                           child: Row(

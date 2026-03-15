@@ -166,17 +166,23 @@ class ReceiptRepository {
         final imageFile = File(receipt.localFilePath!);
 
         if (await imageFile.exists()) {
+          // Get file size
+          final fileSize = await imageFile.length();
+
           // Upload to storage
           await _uploadToStorage(
             imageFile: imageFile,
             storagePath: receipt.storagePath,
           );
 
-          // Upload metadata
-          final cloudId = await _uploadMetadata(receipt);
+          // Upload metadata with file size
+          final cloudId = await _uploadMetadata(
+            receipt,
+            fileSize,
+          ); // ✅ Pass file size
 
           // Mark as synced
-          receipt.markSynced(cloudId);
+          receipt.markSynced(cloudId!);
           await _box.put(receipt.id, receipt);
 
           return true;
@@ -198,7 +204,6 @@ class ReceiptRepository {
   /// Sync all pending receipts to cloud
   Future<int> syncPending() async {
     if (!SupabaseConfig.isSignedIn) {
-      print('⚠️ Cannot sync receipts: User not signed in');
       return 0;
     }
 
@@ -382,14 +387,41 @@ class ReceiptRepository {
   // ==================== SUPABASE DATABASE OPERATIONS ====================
 
   /// Upload receipt metadata to database
-  Future<String> _uploadMetadata(Receipt receipt) async {
-    final response = await _supabase
-        .from('receipts')
-        .insert(receipt.toJson())
-        .select()
-        .single();
+  /// Upload receipt metadata to Supabase
+  Future<String?> _uploadMetadata(Receipt receipt, int fileSize) async {
+    try {
+      // Extract filename from storage path
+      final fileName = receipt.storagePath.split('/').last;
 
-    return response['id'] as String;
+      final data = {
+        'id': receipt.id,
+        'user_id': receipt.userId,
+        'vehicle_id': receipt.vehicleId,
+        'maintenance_record_id': receipt.maintenanceRecordId,
+        'description': receipt.description,
+        'date': receipt.date?.toIso8601String(),
+        'amount': receipt.amount,
+        'storage_path': receipt.storagePath,
+        'file_name': fileName,
+        'file_size': fileSize,
+        'mime_type': 'image/jpeg',
+        'created_at': receipt.createdAt.toIso8601String(),
+        'updated_at': receipt.updatedAt.toIso8601String(),
+      };
+
+      final response = await _supabase
+          .from('receipts')
+          .upsert(data)
+          .select()
+          .single();
+
+      final cloudId = response['id'] as String;
+
+      return cloudId;
+    } catch (e) {
+      print('  ❌ Failed to upload metadata: $e');
+      rethrow;
+    }
   }
 
   /// Update receipt metadata in database
