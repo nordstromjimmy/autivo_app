@@ -1,0 +1,231 @@
+import 'package:hive/hive.dart';
+import '../models/vehicle.dart';
+import '../../../core/config/supabase_config.dart';
+import '../../../core/services/sync/sync_service.dart';
+
+class VehicleRepository {
+  static const String boxName = 'vehicles';
+  final SyncService _syncService = SyncService();
+
+  // Get Hive box
+  Box<Vehicle> get _box => Hive.box<Vehicle>(boxName);
+
+  // ==================== LOCAL OPERATIONS ====================
+
+  /// Get all vehicles (from local storage)
+  List<Vehicle> getAll() {
+    return _box.values.toList();
+  }
+
+  /// Get vehicle by ID
+  Vehicle? getById(String id) {
+    try {
+      return _box.values.firstWhere((v) => v.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Add a new vehicle
+  Future<void> add(Vehicle vehicle) async {
+    // Set userId if user is signed in
+    if (SupabaseConfig.isSignedIn) {
+      vehicle = vehicle.copyWith(
+        userId: SupabaseConfig.currentUserId,
+        needsSync: true,
+      );
+    }
+
+    // Save to Hive first (local-first)
+    await _box.put(vehicle.id, vehicle);
+
+    // Try to sync to cloud if online and signed in
+    if (SupabaseConfig.isSignedIn) {
+      await _trySyncVehicle(vehicle);
+    }
+  }
+
+  /// Update existing vehicle
+  Future<void> update(Vehicle vehicle) async {
+    // Mark for sync
+    vehicle.markForSync();
+
+    // Update in Hive
+    await _box.put(vehicle.id, vehicle);
+
+    // Try to sync to cloud
+    if (SupabaseConfig.isSignedIn) {
+      await _trySyncVehicle(vehicle);
+    }
+  }
+
+  /// Delete vehicle
+  Future<bool> delete(String vehicleId) async {
+    final vehicle = getById(vehicleId);
+    if (vehicle == null) return false;
+
+    // Block if synced and offline
+    if (vehicle.supabaseId != null && !SupabaseConfig.isSignedIn) {
+      return false;
+    }
+
+    // Delete normally
+    await _box.delete(vehicleId);
+
+    // Delete from cloud if online
+    if (SupabaseConfig.isSignedIn && vehicle.supabaseId != null) {
+      await _syncService.deleteVehicle(vehicleId);
+    }
+
+    return true;
+  }
+
+  // ==================== SYNC OPERATIONS ====================
+
+  /// Sync a single vehicle to cloud
+  Future<bool> _trySyncVehicle(Vehicle vehicle) async {
+    try {
+      final cloudId = await _syncService.uploadVehicle(vehicle);
+
+      if (cloudId != null) {
+        // Mark as synced
+        vehicle.markSynced(cloudId);
+        await _box.put(vehicle.id, vehicle);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Failed to sync vehicle ${vehicle.id}: $e');
+      return false;
+    }
+  }
+
+  /// Sync all pending vehicles to cloud
+  Future<int> syncPending() async {
+    if (!SupabaseConfig.isSignedIn) return 0;
+
+    final pendingVehicles = _box.values.where((v) => v.needsSync).toList();
+    int syncedCount = 0;
+
+    for (final vehicle in pendingVehicles) {
+      if (await _trySyncVehicle(vehicle)) {
+        syncedCount++;
+      }
+    }
+
+    return syncedCount;
+  }
+
+  /// Pull vehicles from cloud and sync with local
+  Future<void> pullFromCloud() async {
+    if (!SupabaseConfig.isSignedIn) return;
+
+    try {
+      final cloudVehicles = await _syncService.downloadVehicles();
+
+      // Get cloud vehicle IDs
+      final cloudVehicleIds = cloudVehicles
+          .map((data) => data['id'] as String)
+          .toSet();
+
+      // Get local vehicle IDs
+      final localVehicleIds = _box.keys.toSet();
+
+      // STEP 1: Remove local vehicles not in cloud
+      // BUT preserve vehicles that need to be uploaded (needsSync: true)
+      for (final localId in localVehicleIds) {
+        if (!cloudVehicleIds.contains(localId)) {
+          final localVehicle = _box.get(localId);
+
+          // Don't delete if it needs to be uploaded!
+          if (localVehicle != null && localVehicle.needsSync) {
+            continue; // Skip deletion
+          }
+
+          // Vehicle was deleted from cloud (or other device) - remove it
+          await _box.delete(localId);
+        }
+      }
+
+      // STEP 2: Add or merge vehicles from cloud
+      for (final data in cloudVehicles) {
+        final cloudVehicle = _vehicleFromMap(data);
+        final localVehicle = _box.get(cloudVehicle.id);
+
+        if (localVehicle == null) {
+          await _box.put(cloudVehicle.id, cloudVehicle);
+        } else {
+          final merged = _mergeVehicles(localVehicle, cloudVehicle);
+          await _box.put(merged.id, merged);
+        }
+      }
+    } catch (e) {
+      print('Failed to pull from cloud: $e');
+      rethrow;
+    }
+  }
+
+  /// Assign userId to all local vehicles (for migration)
+  Future<void> assignUserToAllVehicles(String userId) async {
+    final vehicles = _box.values.toList();
+
+    for (final vehicle in vehicles) {
+      final updated = vehicle.copyWith(userId: userId, needsSync: true);
+      await _box.put(vehicle.id, updated);
+    }
+  }
+
+  /// Get count of vehicles pending sync
+  int getPendingSyncCount() {
+    return _box.values.where((v) => v.needsSync).length;
+  }
+
+  // ==================== HELPERS ====================
+
+  /// Merge local and cloud vehicle (conflict resolution)
+  /// Last-write-wins strategy
+  Vehicle _mergeVehicles(Vehicle local, Vehicle cloud) {
+    // If local has changes and is newer, keep local
+    if (local.needsSync && local.updatedAt.isAfter(cloud.updatedAt)) {
+      return local.copyWith(
+        supabaseId: cloud.supabaseId, // Preserve cloud ID
+        needsSync: true, // Still needs upload
+      );
+    }
+
+    // Cloud is newer or equal - use cloud version
+    return cloud.copyWith(needsSync: false);
+  }
+
+  /// Convert Supabase map to Vehicle object
+  Vehicle _vehicleFromMap(Map<String, dynamic> data) {
+    return Vehicle(
+      id: data['id'] as String,
+      registrationNumber: data['registration_number'] as String,
+      make: data['make'] as String,
+      model: data['model'] as String,
+      year: data['year'] as int,
+      fuelType: data['fuel_type'] as String?,
+      engineSize: data['engine_size'] as String?,
+      nextBesiktningDate: data['next_besiktning_date'] != null
+          ? DateTime.parse(data['next_besiktning_date'] as String)
+          : null,
+      currentMileage: data['current_mileage'] as int?,
+      ownershipStartDate: data['ownership_start_date'] != null
+          ? DateTime.parse(data['ownership_start_date'] as String)
+          : null,
+      verificationLevel: data['verification_level'] as String? ?? 'none',
+      verifiedAt: data['verified_at'] != null
+          ? DateTime.parse(data['verified_at'] as String)
+          : null,
+      verificationProof: data['verification_proof'] as String?,
+      verificationConfidence: data['verification_confidence'] as int?,
+      createdAt: DateTime.parse(data['created_at'] as String),
+      updatedAt: DateTime.parse(data['updated_at'] as String),
+      supabaseId: data['id'] as String,
+      userId: data['user_id'] as String,
+      needsSync: false, // Just pulled from cloud
+      lastSyncedAt: DateTime.now(),
+    );
+  }
+}

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/maintenance_provider.dart';
-import '../providers/vehicle_provider.dart';
-import '../providers/auth_provider.dart';
-import '../services/sync_manager.dart';
-import '../utils/custom_snackbar.dart';
-import '../utils/sync_helper.dart';
-import '../utils/vehicle_limit_checker.dart';
-import '../widgets/vehicle_card.dart';
-import 'add_vehicle_screen.dart';
+import '../features/maintenance/providers/maintenance_provider.dart';
+import '../features/vehicles/providers/vehicle_provider.dart';
+import '../features/auth/providers/auth_provider.dart';
+import '../core/services/sync/sync_manager.dart';
+import '../core/utils/helpers/custom_snackbar.dart';
+import '../core/services/sync/sync_helper.dart';
+import '../features/premium/utils/vehicle_limit_checker.dart';
+import '../features/vehicles/widgets/vehicle_card.dart';
+import '../features/vehicles/screens/add_vehicle_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {

@@ -3,18 +3,18 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'models/checklist_state.dart';
-import 'models/receipt.dart';
-import 'models/vehicle.dart';
-import 'models/maintenance_record.dart';
-import 'providers/theme_provider.dart';
+import 'features/inspection/models/checklist_state.dart';
+import 'features/receipts/models/receipt.dart';
+import 'features/vehicles/models/vehicle.dart';
+import 'features/maintenance/models/maintenance_record.dart';
+import 'shared/providers/theme_provider.dart';
 import 'screens/home_screen.dart';
-import 'services/revenue_cat_service.dart';
-import 'services/supabase_config.dart';
-import 'utils/maintenance_deletion_tracker.dart';
-import 'utils/theme.dart';
+import 'core/services/external/revenue_cat_service.dart';
+import 'core/config/supabase_config.dart';
+import 'core/utils/tracking/maintenance_deletion_tracker.dart';
+import 'core/utils/ui/theme.dart';
 import 'screens/splash_screen.dart';
-import 'utils/user_session_tracker.dart';
+import 'core/services/auth/user_session_tracker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

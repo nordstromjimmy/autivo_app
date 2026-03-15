@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:uuid/uuid.dart';
-import '../providers/combined_premium_provider.dart';
-import '../providers/purchase_provider.dart';
-import '../utils/feature_checker.dart';
-import '../utils/premium_features.dart';
-import '../utils/custom_snackbar.dart';
+import '../features/premium/providers/combined_premium_provider.dart';
+import '../features/premium/providers/purchase_provider.dart';
+import '../features/premium/utils/feature_checker.dart';
+import '../features/premium/utils/premium_features.dart';
+import '../core/utils/helpers/custom_snackbar.dart';
 
 class DebugScreen extends ConsumerWidget {
   const DebugScreen({super.key});
