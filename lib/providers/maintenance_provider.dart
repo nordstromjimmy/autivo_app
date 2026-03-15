@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/maintenance_record.dart';
 import '../repositories/maintenance_repository.dart';
+import '../repositories/receipt_repository.dart';
 import 'vehicle_provider.dart';
 
 // Provider for the maintenance repository
@@ -83,10 +84,11 @@ final maintenanceProvider = Provider.family<List<MaintenanceRecord>, String>((
 /// Provider for total pending sync count (vehicles + maintenance)
 /// This is reactive - rebuilds when data changes
 final pendingSyncCountProvider = Provider<int>((ref) {
-  // Watch both repositories so this rebuilds when either changes
   final vehicleRepo = ref.watch(vehicleRepositoryProvider);
   final maintenanceRepo = ref.watch(maintenanceRepositoryProvider);
+  final receiptRepo = ReceiptRepository();
 
   return vehicleRepo.getPendingSyncCount() +
-      maintenanceRepo.getPendingSyncCount();
+      maintenanceRepo.getPendingSyncCount() +
+      receiptRepo.getPendingSyncCount();
 });

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/checklist_state.dart';
+import 'models/receipt.dart';
 import 'models/vehicle.dart';
 import 'models/maintenance_record.dart';
 import 'providers/theme_provider.dart';
@@ -30,10 +31,12 @@ void main() async {
   Hive.registerAdapter(VehicleAdapter());
   Hive.registerAdapter(MaintenanceRecordAdapter());
   Hive.registerAdapter(ChecklistStateAdapter());
+  Hive.registerAdapter(ReceiptAdapter());
 
   await Hive.openBox<Vehicle>('vehicles');
   await Hive.openBox<MaintenanceRecord>('maintenance_records');
   await Hive.openBox<ChecklistState>('checklist');
+  await Hive.openBox<Receipt>('receipts');
 
   await UserSessionTracker.initialize();
   await MaintenanceDeletionTracker.initialize();

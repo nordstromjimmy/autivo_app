@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/combined_premium_provider.dart';
 import '../providers/maintenance_provider.dart';
 import '../providers/purchase_provider.dart';
+import '../providers/receipt_provider.dart';
 import '../providers/vehicle_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
@@ -145,32 +146,6 @@ class SettingsScreen extends ConsumerWidget {
                         minimumSize: const Size(double.infinity, 48),
                       ),
                     ),
-
-                    if (syncManager.hasLocalDataToMigrate()) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info, color: Colors.blue[700], size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                '${syncManager.totalPendingCount} fordon/poster kommer synkas när du loggar in',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue[900],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -369,25 +344,49 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
 
-    // Perform sync (SyncManager automatically refreshes providers)
-    final syncManager = ref.read(syncManagerProvider);
-    final result = await syncManager.fullSync();
+    try {
+      final syncManager = ref.read(syncManagerProvider);
+      final userId = syncManager.userId;
 
-    // Close loading dialog
-    if (context.mounted) Navigator.pop(context);
-
-    // Show result
-    if (result.success) {
-      if (result.totalSynced > 0) {
-        // Show what was synced: "Synkroniserat: 2 fordon, 5 poster"
-        CustomSnackBar.showSuccess(context, result.toString());
-      } else {
-        // Nothing to sync
-        CustomSnackBar.showSuccess(context, 'Allt synkroniserat');
+      if (userId != null) {
+        // Migrate any offline data first
+        if (syncManager.hasLocalDataToMigrate()) {
+          await syncManager.migrateAnonymousData(userId);
+        }
       }
-    } else {
-      // Error occurred - show actual error message
-      CustomSnackBar.showError(context, result.message);
+
+      // Perform sync
+      final result = await syncManager.fullSync();
+
+      // Invalidate all receipt providers to update UI
+      ref.invalidate(receiptNotifierProvider);
+      ref.invalidate(receiptByIdProvider);
+      ref.invalidate(receiptsForVehicleProvider);
+      ref.invalidate(receiptsForMaintenanceProvider);
+      ref.invalidate(receiptPendingSyncCountProvider);
+      ref.invalidate(pendingSyncCountProvider);
+
+      ref.invalidate(vehiclesProvider);
+      ref.invalidate(maintenanceProvider);
+
+      // Close loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      // Show result
+      if (result.success) {
+        if (result.totalSynced > 0) {
+          CustomSnackBar.showSuccess(context, result.toString());
+        } else {
+          CustomSnackBar.showSuccess(context, 'Allt synkroniserat');
+        }
+      } else {
+        CustomSnackBar.showError(context, result.message);
+      }
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+      if (context.mounted) {
+        CustomSnackBar.showError(context, 'Synkronisering misslyckades: $e');
+      }
     }
   }
 

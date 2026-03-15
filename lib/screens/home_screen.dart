@@ -5,6 +5,7 @@ import '../providers/vehicle_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/sync_manager.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/sync_helper.dart';
 import '../utils/vehicle_limit_checker.dart';
 import '../widgets/vehicle_card.dart';
 import 'add_vehicle_screen.dart';
@@ -23,31 +24,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Auto-sync on app start
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _performAutoSync();
-    });
   }
 
-  /// Perform auto-sync if user is signed in
-  Future<void> _performAutoSync() async {
-    if (!mounted) return;
-
-    final syncManager = ref.read(syncManagerProvider);
-
-    // Only sync if user is signed in
-    if (syncManager.isSignedIn) {
-      try {
-        _hasAutoSynced = true;
-
-        // Full sync (pull then push)
-        await syncManager.fullSync();
-      } catch (e) {
-        // Silent fail - don't bother user if sync fails on startup
-        debugPrint('Auto-sync failed: $e');
-      }
-    }
+  Future<void> _performSync(BuildContext context, WidgetRef ref) async {
+    await SyncHelper.performFullSync(context, ref);
   }
 
   @override
@@ -61,7 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       next.whenData((_) async {
         // User just logged in - sync immediately
         if (syncManager.isSignedIn && !_hasAutoSynced) {
-          await _performAutoSync();
+          //await _performAutoSync();
 
           // Force rebuild after sync
           if (mounted) {
@@ -78,7 +58,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         actions: [
           Consumer(
             builder: (context, ref, _) {
-              final syncManager = ref.read(syncManagerProvider);
               final count = ref.watch(pendingSyncCountProvider);
 
               if (count > 0) {
@@ -87,24 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     label: Text('$count'),
                     child: const Icon(Icons.cloud_upload),
                   ),
-                  onPressed: () async {
-                    // Show loading
-                    if (context.mounted) {
-                      CustomSnackBar.showSyncing(context, 'Synkroniserar...');
-                    }
-
-                    // Sync (SyncManager automatically refreshes providers)
-                    final result = await syncManager.fullSync();
-
-                    // Show result
-                    if (context.mounted) {
-                      if (result.success) {
-                        CustomSnackBar.showSuccess(context, result.toString());
-                      } else {
-                        CustomSnackBar.showError(context, result.toString());
-                      }
-                    }
-                  },
+                  onPressed: () => _performSync(context, ref),
                 );
               }
 

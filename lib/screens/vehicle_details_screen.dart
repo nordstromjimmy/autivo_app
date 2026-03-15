@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/vehicle_provider.dart';
 import 'tabs/vehicle_besiktning_tab.dart';
 import 'tabs/vehicle_service_tab.dart';
+import 'tabs/vehicle_receipts_tab.dart';
 
 class VehicleDetailsScreen extends ConsumerWidget {
   final String vehicleId;
@@ -31,7 +32,7 @@ class VehicleDetailsScreen extends ConsumerWidget {
     final vehicle = vehicles[vehicleIndex];
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -45,6 +46,7 @@ class VehicleDetailsScreen extends ConsumerWidget {
                   tabs: const [
                     Tab(icon: Icon(Icons.event), text: 'Besiktning'),
                     Tab(icon: Icon(Icons.build), text: 'Service'),
+                    Tab(icon: Icon(Icons.receipt), text: 'Kvitton'),
                   ],
                 ),
               ],
@@ -59,6 +61,7 @@ class VehicleDetailsScreen extends ConsumerWidget {
                 children: [
                   VehicleBesiktningTab(vehicle: vehicle),
                   VehicleServiceTab(vehicle: vehicle),
+                  VehicleReceiptsTab(vehicle: vehicle),
                 ],
               ),
             ),

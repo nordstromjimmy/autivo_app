@@ -5,18 +5,6 @@ import '../screens/auth/sign_up_screen.dart';
 import '../utils/feature_checker.dart';
 import '../utils/feature_gates.dart';
 
-/// Widget that shows content if user has access, or upgrade prompt if not
-///
-/// Usage:
-/// ```dart
-/// FeatureGate(
-///   feature: AppFeature.ocrScanning,
-///   child: IconButton(
-///     icon: Icon(Icons.document_scanner),
-///     onPressed: () => _startOCRScan(),
-///   ),
-/// )
-/// ```
 class FeatureGate extends ConsumerWidget {
   final AppFeature feature;
   final Widget child;
@@ -49,7 +37,6 @@ class FeatureGate extends ConsumerWidget {
     }
 
     final requiredTier = checker.getRequiredTier(feature);
-    final message = checker.getUpgradeMessage(feature);
 
     return Opacity(
       opacity: 0.5,

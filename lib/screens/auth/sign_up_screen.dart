@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/maintenance_provider.dart';
 import '../../providers/purchase_provider.dart';
 import '../../providers/combined_premium_provider.dart';
+import '../../providers/vehicle_provider.dart';
 import '../../services/sync_manager.dart';
 import '../../utils/custom_snackbar.dart';
+import '../../utils/feature_checker.dart';
+import '../../utils/premium_features.dart';
 import '../../utils/user_session_tracker.dart';
 import '../home_screen.dart';
 
@@ -116,11 +120,21 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
       if (currentUserId == null) return;
 
-      // ✅ ADD THIS - Link RevenueCat to Supabase user
+      // Link RevenueCat to Supabase user
       await _identifyRevenueCatUser(currentUserId);
 
       // Save user ID for session tracking
       await UserSessionTracker.saveUserId(currentUserId);
+
+      // Invalidate ALL providers
+      ref.invalidate(vehiclesProvider);
+      ref.invalidate(maintenanceProvider);
+      ref.invalidate(premiumStatusProvider);
+      ref.invalidate(supabasePremiumStatusProvider);
+      ref.invalidate(combinedPremiumStatusProvider);
+      ref.invalidate(premiumFeaturesProvider);
+      ref.invalidate(userTierProvider);
+      ref.invalidate(featureCheckerProvider);
 
       // ... rest of existing code ...
     } catch (e) {
@@ -129,7 +143,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     }
   }
 
-  // ✅ ADD THIS METHOD
   Future<void> _identifyRevenueCatUser(String supabaseUserId) async {
     try {
       // Link RevenueCat user to Supabase user ID

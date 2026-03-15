@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/maintenance_repository.dart';
+import '../repositories/receipt_repository.dart';
 import '../providers/vehicle_provider.dart';
 import '../providers/maintenance_provider.dart';
 import '../repositories/vehicle_repository.dart';
@@ -18,6 +19,7 @@ class SyncManager {
   VehicleRepository get _vehicleRepo => _ref.read(vehicleRepositoryProvider);
   MaintenanceRepository get _maintenanceRepo =>
       _ref.read(maintenanceRepositoryProvider);
+  ReceiptRepository get _receiptRepo => ReceiptRepository();
 
   // ==================== SYNC STATUS ====================
 
@@ -30,7 +32,8 @@ class SyncManager {
   /// Get total count of items needing sync
   int get totalPendingCount {
     return _vehicleRepo.getPendingSyncCount() +
-        _maintenanceRepo.getPendingSyncCount();
+        _maintenanceRepo.getPendingSyncCount() +
+        _receiptRepo.getPendingSyncCount();
   }
 
   /// Check if device can sync (has internet)
@@ -48,6 +51,7 @@ class SyncManager {
         message: 'Logga in för att synkronisera',
         vehiclesSynced: 0,
         recordsSynced: 0,
+        receiptsSynced: 0,
       );
     }
 
@@ -57,6 +61,7 @@ class SyncManager {
         message: 'Ingen internetanslutning',
         vehiclesSynced: 0,
         recordsSynced: 0,
+        receiptsSynced: 0,
       );
     }
 
@@ -64,15 +69,17 @@ class SyncManager {
       // Step 1: Pull from cloud first
       await _vehicleRepo.pullFromCloud();
 
-      // Step 2: Pull maintenance records for all vehicles
+      // Step 2: Pull maintenance records and receipts for all vehicles
       final vehicles = _vehicleRepo.getAll();
       for (final vehicle in vehicles) {
         await _maintenanceRepo.pullFromCloud(vehicle.id);
+        await _receiptRepo.pullFromCloud(vehicle.id);
       }
 
       // Step 3: Push pending changes
       final vehiclesSynced = await _vehicleRepo.syncPending();
       final recordsSynced = await _maintenanceRepo.syncPending();
+      final receiptsSynced = await _receiptRepo.syncPending();
 
       // Step 4: Refresh providers to update UI
       _refreshProviders();
@@ -82,6 +89,7 @@ class SyncManager {
         message: 'Sync lyckades',
         vehiclesSynced: vehiclesSynced,
         recordsSynced: recordsSynced,
+        receiptsSynced: receiptsSynced,
       );
     } catch (e) {
       return SyncResult(
@@ -89,6 +97,7 @@ class SyncManager {
         message: 'Sync misslyckades: $e',
         vehiclesSynced: 0,
         recordsSynced: 0,
+        receiptsSynced: 0,
       );
     }
   }
@@ -101,12 +110,14 @@ class SyncManager {
         message: 'Du är inte inloggad',
         vehiclesSynced: 0,
         recordsSynced: 0,
+        receiptsSynced: 0,
       );
     }
 
     try {
       final vehiclesSynced = await _vehicleRepo.syncPending();
       final recordsSynced = await _maintenanceRepo.syncPending();
+      final receiptsSynced = await _receiptRepo.syncPending();
 
       // Refresh providers to update UI
       _refreshProviders();
@@ -116,6 +127,7 @@ class SyncManager {
         message: 'Uppladdning lyckades',
         vehiclesSynced: vehiclesSynced,
         recordsSynced: recordsSynced,
+        receiptsSynced: receiptsSynced,
       );
     } catch (e) {
       return SyncResult(
@@ -123,6 +135,7 @@ class SyncManager {
         message: 'Uppladdning misslyckades: $e',
         vehiclesSynced: 0,
         recordsSynced: 0,
+        receiptsSynced: 0,
       );
     }
   }
@@ -135,6 +148,7 @@ class SyncManager {
         message: 'Du är inte inloggad',
         vehiclesSynced: 0,
         recordsSynced: 0,
+        receiptsSynced: 0,
       );
     }
 
@@ -144,6 +158,7 @@ class SyncManager {
       final vehicles = _vehicleRepo.getAll();
       for (final vehicle in vehicles) {
         await _maintenanceRepo.pullFromCloud(vehicle.id);
+        await _receiptRepo.pullFromCloud(vehicle.id);
       }
 
       // Refresh providers to update UI
@@ -154,6 +169,7 @@ class SyncManager {
         message: 'Nerladdning lyckades',
         vehiclesSynced: vehicles.length,
         recordsSynced: 0, // We don't track this separately
+        receiptsSynced: 0,
       );
     } catch (e) {
       return SyncResult(
@@ -161,6 +177,7 @@ class SyncManager {
         message: 'Nerladdning misslyckades: $e',
         vehiclesSynced: 0,
         recordsSynced: 0,
+        receiptsSynced: 0,
       );
     }
   }
@@ -171,6 +188,7 @@ class SyncManager {
   Future<void> migrateAnonymousData(String userId) async {
     await _vehicleRepo.assignUserToAllVehicles(userId);
     await _maintenanceRepo.assignUserToAllRecords(userId);
+    await _receiptRepo.assignUserToAllReceipts(userId);
 
     // Upload everything to cloud
     await pushOnly();
@@ -178,8 +196,32 @@ class SyncManager {
 
   /// Check if user has any local data to migrate
   bool hasLocalDataToMigrate() {
+    // Check vehicles
     final vehicles = _vehicleRepo.getAll();
-    return vehicles.any((v) => v.userId == null);
+    final hasVehicles = vehicles.any(
+      (v) => v.userId == null || v.userId!.isEmpty,
+    );
+
+    // Check receipts
+    final receipts = _receiptRepo.getAll();
+    final hasReceipts = receipts.any((r) => r.userId.isEmpty);
+
+    // Check maintenance records
+    final maintenance = _maintenanceRepo.getAll();
+    final hasMaintenance = maintenance.any(
+      (m) => m.userId == null || m.userId!.isEmpty,
+    );
+
+    final needsMigration = hasVehicles || hasReceipts || hasMaintenance;
+
+    if (needsMigration) {
+      print('ℹ️ Found data needing migration:');
+      if (hasVehicles) print('  - Vehicles without userId');
+      if (hasReceipts) print('  - Receipts without userId');
+      if (hasMaintenance) print('  - Maintenance without userId');
+    }
+
+    return needsMigration;
   }
 
   // ==================== HELPERS ====================
@@ -189,8 +231,8 @@ class SyncManager {
     // Refresh vehicles provider
     _ref.read(vehiclesProvider.notifier).refresh();
 
-    // Note: Maintenance provider refreshes automatically when vehicles change
-    // because it uses provider.family which is invalidated per vehicle
+    // Note: Maintenance and receipt providers refresh automatically when vehicles change
+    // because they use provider.family which is invalidated per vehicle
   }
 }
 
@@ -201,20 +243,30 @@ class SyncResult {
   final String message;
   final int vehiclesSynced;
   final int recordsSynced;
+  final int receiptsSynced;
 
   SyncResult({
     required this.success,
     required this.message,
     required this.vehiclesSynced,
     required this.recordsSynced,
+    required this.receiptsSynced,
   });
 
-  int get totalSynced => vehiclesSynced + recordsSynced;
+  int get totalSynced => vehiclesSynced + recordsSynced + receiptsSynced;
 
   @override
   String toString() {
     if (!success) return message;
     if (totalSynced == 0) return 'Allting syncat';
-    return 'Synkroniserat: $vehiclesSynced fordon, $recordsSynced poster';
+
+    // Include receipts in message
+    final parts = <String>[];
+    if (vehiclesSynced > 0) parts.add('$vehiclesSynced fordon');
+    if (recordsSynced > 0) parts.add('$recordsSynced poster');
+    if (receiptsSynced > 0) parts.add('$receiptsSynced kvitton');
+
+    if (parts.isEmpty) return 'Allting syncat';
+    return 'Synkroniserat: ${parts.join(', ')}';
   }
 }

@@ -106,25 +106,24 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
       if (currentUserId == null) return;
 
-      // ✅ ADD THIS - Link RevenueCat to Supabase user
+      // Link RevenueCat to Supabase user
       await _identifyRevenueCatUser(currentUserId);
 
       final isDifferentUser = UserSessionTracker.isDifferentUser(currentUserId);
 
       if (isDifferentUser) {
         // DIFFERENT USER - Clear everything
+        print('🔄 Different user detected - clearing local data');
         await clearAllLocalData();
         await MaintenanceDeletionTracker.clearAll();
       } else {
-        // SAME USER - Process offline deletions before sync
+        // SAME USER - Process offline deletions only
+        print('✅ Same user - processing offline changes');
         await _processOfflineMaintenanceDeletions();
       }
 
       // Save user ID
       await UserSessionTracker.saveUserId(currentUserId);
-
-      // Sync data (merge local with cloud)
-      await syncManager.fullSync();
 
       // Invalidate ALL providers (including feature gates)
       ref.invalidate(vehiclesProvider);
@@ -132,8 +131,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
-
-      // Invalidate feature gate providers
       ref.invalidate(premiumFeaturesProvider);
       ref.invalidate(userTierProvider);
       ref.invalidate(featureCheckerProvider);

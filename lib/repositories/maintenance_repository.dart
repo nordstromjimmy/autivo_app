@@ -13,6 +13,11 @@ class MaintenanceRepository {
 
   // ==================== LOCAL OPERATIONS ====================
 
+  /// Get all maintenance records
+  List<MaintenanceRecord> getAll() {
+    return _box.values.toList();
+  }
+
   /// Get all maintenance records for a vehicle
   List<MaintenanceRecord> getByVehicleId(String vehicleId) {
     return _box.values.where((r) => r.vehicleId == vehicleId).toList();
