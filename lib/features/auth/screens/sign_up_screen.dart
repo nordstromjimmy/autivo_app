@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mina_fordon/features/auth/screens/sign_in_screen.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../providers/auth_provider.dart';
 import '../../maintenance/providers/maintenance_provider.dart';
@@ -327,6 +328,37 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           ),
                         )
                       : const Text('Skapa konto'),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'eller',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                OutlinedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SignInScreen(),
+                            ),
+                          );
+                        },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Logga in'),
                 ),
 
                 const SizedBox(height: 24),

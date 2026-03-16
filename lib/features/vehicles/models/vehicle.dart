@@ -169,7 +169,7 @@ class Vehicle extends HiveObject {
     // For OCR-verified vehicles, use confidence score
     if (verificationLevel == 'self' && verificationConfidence != null) {
       if (verificationConfidence! >= 90) {
-        return '✓ Verifierad';
+        return 'med registreringsbevis';
       }
       return '✓ Ägare';
     }

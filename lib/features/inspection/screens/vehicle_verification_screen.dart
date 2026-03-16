@@ -557,7 +557,7 @@ class _VehicleVerificationScreenState
           children: [
             Icon(Icons.warning_amber, color: Colors.orange),
             const SizedBox(width: 8),
-            // ✅ WRAP Text IN Expanded
+            // WRAP Text IN Expanded
             const Expanded(child: Text('Kunde inte verifiera')),
           ],
         ),

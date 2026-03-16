@@ -86,9 +86,9 @@ class ReceiptCard extends ConsumerWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 1, // ✅ Only show 1 line
-                        overflow: TextOverflow
-                            .ellipsis, // ✅ Show "..." when truncated
+                        maxLines: 1, // Only show 1 line
+                        overflow:
+                            TextOverflow.ellipsis, // Show "..." when truncated
                       ),
 
                     // Date

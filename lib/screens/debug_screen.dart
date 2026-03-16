@@ -248,7 +248,7 @@ class DebugScreen extends ConsumerWidget {
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('✅ User Reset Complete'),
+            title: const Text('User Reset Complete'),
             content: Text(
               'RevenueCat user has been reset.\n\n'
               'New User ID: $newUserId\n\n'

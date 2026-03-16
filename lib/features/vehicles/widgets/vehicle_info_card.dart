@@ -187,9 +187,9 @@ class VehicleInfoCard extends StatelessWidget {
   Color _getVerificationColor(String level) {
     switch (level) {
       case 'self':
-        return Colors.orange;
+        return Colors.green;
       case 'sms':
-        return Colors.blue;
+        return Colors.green;
       case 'official':
         return Colors.green;
       default:

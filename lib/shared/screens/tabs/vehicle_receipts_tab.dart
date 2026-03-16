@@ -96,7 +96,7 @@ class VehicleReceiptsTab extends ConsumerWidget {
   ) {
     // Show only last 6 receipts in grid
     final displayReceipts = receipts.take(6).toList();
-    final hasMore = receipts.length > 6;
+    final hasMore = receipts.length > 1;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -138,7 +138,7 @@ class VehicleReceiptsTab extends ConsumerWidget {
 
         // "View all" button if more receipts exist
         if (hasMore) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 2),
           OutlinedButton.icon(
             onPressed: () {
               Navigator.push(

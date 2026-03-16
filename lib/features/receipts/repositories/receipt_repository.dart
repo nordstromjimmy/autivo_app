@@ -179,7 +179,7 @@ class ReceiptRepository {
           final cloudId = await _uploadMetadata(
             receipt,
             fileSize,
-          ); // ✅ Pass file size
+          ); // Pass file size
 
           // Mark as synced
           receipt.markSynced(cloudId!);
@@ -289,14 +289,17 @@ class ReceiptRepository {
       // Download from cloud if needed
       if (receipt.supabaseId != null && SupabaseConfig.isSignedIn) {
         final tempDir = await getTemporaryDirectory();
-        final localPath = '${tempDir.path}/${receipt.fileName}';
+
+        // EXTRACT filename from storagePath instead of using receipt.fileName
+        final fileName = receipt.storagePath.split('/').last;
+        final localPath = '${tempDir.path}/$fileName';
 
         final downloadedFile = await _downloadFromStorage(
           storagePath: receipt.storagePath,
           localPath: localPath,
         );
 
-        // Update local path
+        // Update local path in Hive
         final updatedReceipt = receipt.copyWith(localFilePath: localPath);
         await _box.put(receipt.id, updatedReceipt);
 
@@ -304,8 +307,9 @@ class ReceiptRepository {
       }
 
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ Error getting local file: $e');
+      print('Stack trace: $stackTrace');
       return null;
     }
   }

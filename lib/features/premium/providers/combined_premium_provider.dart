@@ -4,25 +4,35 @@ import 'purchase_provider.dart';
 
 /// Combined premium status provider that checks BOTH RevenueCat AND Supabase
 /// This is what UI widgets should use to display premium status
-final combinedPremiumStatusProvider = FutureProvider<bool>((ref) async {
+final combinedPremiumStatusProvider = StreamProvider<bool>((ref) async* {
   final user = Supabase.instance.client.auth.currentUser;
-  if (user == null) return false;
-  // Check RevenueCat
-  final revenueCatStatus = ref.watch(premiumStatusProvider);
-  final hasRevenueCatPremium = revenueCatStatus.maybeWhen(
-    data: (isPremium) => isPremium,
-    orElse: () => false,
-  );
+  if (user == null) {
+    yield false;
+    return;
+  }
 
-  // If RevenueCat has premium, return true immediately
-  if (hasRevenueCatPremium) return true;
+  // Listen to both providers and emit whenever either changes
+  await for (final _ in Stream.periodic(const Duration(seconds: 1))) {
+    final revenueCatStatus = ref.read(premiumStatusProvider);
+    final supabaseStatus = ref.read(supabasePremiumStatusProvider);
 
-  // Otherwise, check Supabase
-  final supabaseStatus = ref.watch(supabasePremiumStatusProvider);
-  return supabaseStatus.maybeWhen(
-    data: (isPremium) => isPremium,
-    orElse: () => false,
-  );
+    final hasRevenueCatPremium = revenueCatStatus.maybeWhen(
+      data: (isPremium) => isPremium,
+      orElse: () => false,
+    );
+
+    if (hasRevenueCatPremium) {
+      yield true;
+      continue;
+    }
+
+    final hasSupabasePremium = supabaseStatus.maybeWhen(
+      data: (isPremium) => isPremium,
+      orElse: () => false,
+    );
+
+    yield hasSupabasePremium;
+  }
 });
 
 /// Provider to fetch premium status from Supabase users table

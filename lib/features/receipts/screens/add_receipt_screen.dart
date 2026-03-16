@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../premium/screens/paywall_screen.dart';
+import '../../premium/utils/receipt_limit_checker.dart';
 import '../models/receipt.dart';
 import '../providers/receipt_provider.dart';
 import '../../../core/utils/helpers/custom_snackbar.dart';
@@ -231,6 +233,12 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if user can add receipts (editing existing is always allowed)
+    if (widget.existingReceipt == null &&
+        !ReceiptLimitChecker.canAddReceipt(ref)) {
+      return _buildLimitReachedScreen(context);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditMode ? 'Redigera kvitto' : 'Lägg till kvitto'),
@@ -392,6 +400,115 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLimitReachedScreen(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Uppgradera')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.receipt_long, size: 100, color: Colors.blue),
+              const SizedBox(height: 24),
+
+              const Text(
+                'Maxgräns',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 12),
+
+              Text(
+                'Du har uppnått gränsen för antal sparade kvitton',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Benefits list
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Premium ger dig:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildBenefit('Obegränsat antal kvitton'),
+                    _buildBenefit('Synkronisering mellan enheter'),
+                    _buildBenefit('PDF-export med kvitton'),
+                    _buildBenefit('Backup i molnet'),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Upgrade button
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PaywallScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 48,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Uppgradera till Premium',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Cancel button
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Avbryt'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBenefit(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.blue[700], size: 20),
+          const SizedBox(width: 12),
+          Text(text, style: const TextStyle(fontSize: 14)),
+        ],
       ),
     );
   }

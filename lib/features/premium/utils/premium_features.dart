@@ -17,7 +17,7 @@ class PremiumFeatures {
   bool get hasAccount {
     final user = ref.watch(
       currentUserProvider,
-    ); // ✅ Watch provider, not direct read!
+    ); // Watch provider, not direct read!
     return user != null;
   }
 
@@ -239,7 +239,7 @@ class PremiumFeature {
 /// Provider to access PremiumFeatures helper
 /// NOW REACTIVE - watches auth state changes
 final premiumFeaturesProvider = Provider<PremiumFeatures>((ref) {
-  // ✅ Watch auth state so this rebuilds when user logs in/out
+  // Watch auth state so this rebuilds when user logs in/out
   ref.watch(currentUserProvider);
   return PremiumFeatures(ref);
 });

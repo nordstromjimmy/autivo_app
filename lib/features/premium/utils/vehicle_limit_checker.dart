@@ -25,7 +25,7 @@ class VehicleLimitChecker {
     final canAdd = checker.canAddVehicle(currentCount);
 
     if (canAdd) {
-      return true; // User can add vehicle ✅
+      return true; // User can add vehicle
     }
 
     // User has reached limit - show appropriate screen based on tier

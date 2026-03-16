@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/receipt.dart';
 import '../providers/receipt_provider.dart';
 import '../widgets/receipt_card.dart';
-import 'add_receipt_screen.dart';
 
 class ReceiptsGalleryScreen extends ConsumerStatefulWidget {
   final String vehicleId;
@@ -60,19 +59,6 @@ class _ReceiptsGalleryScreenState extends ConsumerState<ReceiptsGalleryScreen> {
                 : _buildReceiptsGrid(sortedReceipts),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  AddReceiptScreen(vehicleId: widget.vehicleId),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add_a_photo),
-        label: const Text('Lägg till'),
       ),
     );
   }
