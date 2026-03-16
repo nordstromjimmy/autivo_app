@@ -112,7 +112,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Tryck på + för att lägga till ditt första fordon',
+                                'Tryck på + för att lägga till ditt första fordon eller logga in för att ladda sparade fordon.',
                                 style: TextStyle(color: Colors.grey[600]),
                               ),
                             ],

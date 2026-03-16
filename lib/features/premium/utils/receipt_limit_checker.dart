@@ -32,23 +32,6 @@ class ReceiptLimitChecker {
     final currentCount = getCurrentCount(ref);
     return (freeReceiptLimit - currentCount).clamp(0, freeReceiptLimit);
   }
-
-  /// Get appropriate message for user's current state
-  static String getLimitMessage(WidgetRef ref) {
-    final isPremium = ref.watch(combinedPremiumStatusProvider).value ?? false;
-    final currentCount = getCurrentCount(ref);
-
-    if (isPremium) {
-      return 'Premium: Obegränsat antal kvitton';
-    }
-
-    if (currentCount >= freeReceiptLimit) {
-      return 'Du har nått gränsen (3 kvitton). Uppgradera till Premium för obegränsat antal!';
-    }
-
-    final remaining = freeReceiptLimit - currentCount;
-    return 'Du kan spara $remaining kvitton till. Uppgradera för obegränsat antal!';
-  }
 }
 
 // Provider for easy access

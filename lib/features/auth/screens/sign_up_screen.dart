@@ -329,7 +329,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         )
                       : const Text('Skapa konto'),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 40),
                 Row(
                   children: [
                     const Expanded(child: Divider()),
@@ -375,7 +375,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           children: [
                             Icon(
                               Icons.cloud,
-                              color: Theme.of(context).primaryColor,
+                              color: Theme.of(context).colorScheme.tertiary,
                             ),
                             const SizedBox(width: 12),
                             Text(

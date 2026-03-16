@@ -120,7 +120,7 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Logga in för att säkerhetskopiera din data',
+                                'Logga in för att säkerhetskopiera din data eller ladda din sparade data',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
