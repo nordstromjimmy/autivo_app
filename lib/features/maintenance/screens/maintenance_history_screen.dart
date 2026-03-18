@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/media/pdf_export_helper.dart';
+import '../../vehicles/models/vehicle.dart';
 import '../models/maintenance_record.dart';
 import '../providers/maintenance_provider.dart';
-import '../../vehicles/providers/vehicle_provider.dart';
-import '../../../core/services/media/pdf_export_service.dart';
 import '../../premium/utils/feature_checker.dart';
 import '../../premium/utils/feature_gates.dart';
 import '../widgets/maintenance_list_item.dart';
@@ -13,11 +13,13 @@ import '../../premium/screens/paywall_screen.dart';
 class MaintenanceHistoryScreen extends ConsumerStatefulWidget {
   final String vehicleId;
   final String vehicleName;
+  final Vehicle vehicle;
 
   const MaintenanceHistoryScreen({
     super.key,
     required this.vehicleId,
     required this.vehicleName,
+    required this.vehicle,
   });
 
   @override
@@ -68,7 +70,11 @@ class _MaintenanceHistoryScreenState
                 }
 
                 // User has premium - proceed with export
-                _exportPDF();
+                PdfExportHelper.exportVehiclePDF(
+                  context: context,
+                  ref: ref,
+                  vehicle: widget.vehicle,
+                );
               }
             },
             itemBuilder: (context) => [
@@ -516,74 +522,6 @@ class _MaintenanceHistoryScreenState
     }
 
     return filtered;
-  }
-
-  void _exportPDF() async {
-    // Get vehicle info
-    final vehicle = ref
-        .read(vehiclesProvider)
-        .firstWhere((v) => v.id == widget.vehicleId);
-
-    final records = ref.read(maintenanceProvider(widget.vehicleId));
-
-    if (records.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ingen servicehistorik att exportera'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Skapar PDF...'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    try {
-      // Generate PDF
-      final pdfFile = await PdfExportService.generateMaintenancePDF(
-        vehicle: vehicle,
-        records: records,
-      );
-
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
-
-      // Share PDF
-      await PdfExportService.sharePDF(pdfFile);
-    } catch (e) {
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
-
-      // Show error
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fel vid PDF-export: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
   }
 
   String _getMonthName(int month) {

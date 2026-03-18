@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/media/pdf_export_helper.dart';
 import '../providers/vehicle_provider.dart';
 import '../../../shared/screens/tabs/vehicle_besiktning_tab.dart';
 import '../../../shared/screens/tabs/vehicle_service_tab.dart';
@@ -37,6 +38,19 @@ class VehicleDetailsScreen extends ConsumerWidget {
         appBar: AppBar(
           centerTitle: true,
           title: Text(vehicle.registrationNumber),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf),
+              tooltip: 'Exportera rapport',
+              onPressed: () {
+                PdfExportHelper.exportVehiclePDF(
+                  context: context,
+                  ref: ref,
+                  vehicle: vehicle,
+                );
+              },
+            ),
+          ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(48),
             child: Column(

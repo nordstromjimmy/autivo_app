@@ -111,9 +111,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                'Tryck på + för att lägga till ditt första fordon eller logga in för att ladda sparade fordon.',
-                                style: TextStyle(color: Colors.grey[600]),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 28.0,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Tryck på + för att lägga till ditt första fordon.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Logga in för att ladda sparade fordon.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

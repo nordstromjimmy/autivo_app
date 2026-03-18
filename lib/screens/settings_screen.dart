@@ -62,9 +62,6 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: const Text('Inloggad'),
             ),
 
-            // Change theme
-            const ThemeSelectorCompact(),
-
             // Sync section
             const Divider(),
             const _SectionHeader(title: 'Synkronisering'),
@@ -153,6 +150,9 @@ class SettingsScreen extends ConsumerWidget {
           ],
 
           // App Info Section
+          const Divider(),
+          const _SectionHeader(title: 'Inställningar'),
+          const ThemeSelectorCompact(),
           const Divider(),
           const _SectionHeader(title: 'Om'),
 

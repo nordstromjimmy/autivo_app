@@ -4,7 +4,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../features/maintenance/models/maintenance_record.dart';
+import '../../../features/receipts/models/receipt.dart';
 import '../../../features/vehicles/models/vehicle.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -21,9 +23,9 @@ class PdfExportService {
   static Future<File> generateMaintenancePDF({
     required Vehicle vehicle,
     required List<MaintenanceRecord> records,
+    List<Receipt>? receipts,
   }) async {
     final pdf = pw.Document();
-
     final logo = await _loadLogo();
 
     // Page 1: Cover Page
@@ -51,6 +53,32 @@ class PdfExportService {
         footer: (context) => _buildPageFooter(context),
       ),
     );
+
+    // Page 4+: Receipts Gallery (if receipts exist)
+    if (receipts != null && receipts.isNotEmpty) {
+      final receiptImages = await _loadAllReceiptImages(receipts);
+
+      // Add receipts section header page
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) => _buildReceiptsSectionHeader(receipts.length),
+        ),
+      );
+
+      // Add one page per receipt
+      for (final receipt in receipts) {
+        final imageProvider = receiptImages[receipt];
+        if (imageProvider != null) {
+          pdf.addPage(
+            pw.Page(
+              pageFormat: PdfPageFormat.a4,
+              build: (context) => _buildReceiptPage(receipt, imageProvider),
+            ),
+          );
+        }
+      }
+    }
 
     // Save PDF
     final output = await getTemporaryDirectory();
@@ -472,6 +500,194 @@ class PdfExportService {
     );
   }
 
+  // ==================== RECEIPTS SECTION ====================
+  /// Build receipts section (synchronous - images already loaded)
+  /// Build a full A4 page for one receipt
+  static pw.Widget _buildReceiptPage(Receipt receipt, pw.ImageProvider image) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+      children: [
+        // Header with receipt metadata
+        pw.Container(
+          padding: const pw.EdgeInsets.all(20),
+          decoration: pw.BoxDecoration(
+            gradient: pw.LinearGradient(
+              colors: [primaryColor, PdfColor.fromInt(0xFF1976D2)],
+            ),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'KVITTO',
+                style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white,
+                  letterSpacing: 2,
+                ),
+              ),
+              pw.SizedBox(height: 8),
+
+              // Description
+              if (receipt.description != null &&
+                  receipt.description!.isNotEmpty)
+                pw.Text(
+                  receipt.description!,
+                  style: pw.TextStyle(
+                    fontSize: 20,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.white,
+                  ),
+                  maxLines: 2,
+                )
+              else
+                pw.Text(
+                  'Kvitto utan beskrivning',
+                  style: pw.TextStyle(
+                    fontSize: 20,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.white,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+
+              pw.SizedBox(height: 12),
+
+              // Date and Amount in a row
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  // Date
+                  if (receipt.date != null)
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          _formatDate(receipt.date!),
+                          style: const pw.TextStyle(
+                            fontSize: 14,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    pw.SizedBox(),
+
+                  // Amount
+                  if (receipt.amount != null)
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: pw.BoxDecoration(
+                        color: whiteColor,
+                        borderRadius: pw.BorderRadius.circular(8),
+                      ),
+                      child: pw.Text(
+                        '${receipt.amount!.toStringAsFixed(0)} kr',
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blueAccent,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // Full-size receipt image
+        pw.Expanded(
+          child: pw.Container(
+            color: PdfColors.grey200,
+            padding: const pw.EdgeInsets.all(20),
+            child: pw.Center(
+              child: pw.Container(
+                child: pw.Image(
+                  image,
+                  fit: pw
+                      .BoxFit
+                      .contain, // Show full image, maintain aspect ratio
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build receipts section header page
+  static pw.Widget _buildReceiptsSectionHeader(int receiptCount) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(40),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Kvitton',
+            style: pw.TextStyle(
+              fontSize: 48,
+              fontWeight: pw.FontWeight.bold,
+              color: primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 16),
+          pw.Container(height: 4, width: 80, color: primaryColor),
+          pw.SizedBox(height: 24),
+          pw.Text(
+            'Detta dokument innehåller $receiptCount ${receiptCount == 1 ? 'kvitto' : 'kvitton'}',
+            style: pw.TextStyle(fontSize: 18, color: secondaryColor),
+          ),
+          pw.SizedBox(height: 16),
+          pw.Text(
+            'Varje kvitto visas på en egen sida för enkel läsning och arkivering.',
+            style: pw.TextStyle(
+              fontSize: 14,
+              color: secondaryColor,
+              fontStyle: pw.FontStyle.italic,
+            ),
+          ),
+          pw.Spacer(),
+        ],
+      ),
+    );
+  }
+
+  /// Build a single receipt card
+
+  /// Load receipt image from local file or download from storage
+  static Future<pw.ImageProvider> _loadReceiptImage(Receipt receipt) async {
+    // Try local file first
+    if (receipt.localFilePath != null) {
+      final file = File(receipt.localFilePath!);
+      if (await file.exists()) {
+        final bytes = await file.readAsBytes();
+        return pw.MemoryImage(bytes);
+      }
+    }
+
+    // Download from Supabase Storage
+    if (receipt.storagePath.isNotEmpty) {
+      try {
+        final bytes = await Supabase.instance.client.storage
+            .from('receipts')
+            .download(receipt.storagePath);
+
+        return pw.MemoryImage(Uint8List.fromList(bytes));
+      } catch (e) {
+        print('Failed to download receipt from storage: $e');
+        throw Exception('Could not load receipt image');
+      }
+    }
+
+    throw Exception('No image source available');
+  }
+
   // ==================== HELPER WIDGETS ====================
   static pw.Widget _buildStatCard(
     String label,
@@ -608,6 +824,24 @@ class PdfExportService {
         ],
       ),
     );
+  }
+
+  static Future<Map<Receipt, pw.ImageProvider?>> _loadAllReceiptImages(
+    List<Receipt> receipts,
+  ) async {
+    final receiptImages = <Receipt, pw.ImageProvider?>{};
+
+    for (final receipt in receipts) {
+      try {
+        final imageProvider = await _loadReceiptImage(receipt);
+        receiptImages[receipt] = imageProvider;
+      } catch (e) {
+        print('Failed to load receipt image ${receipt.id}: $e');
+        receiptImages[receipt] = null;
+      }
+    }
+
+    return receiptImages;
   }
 
   // ==================== HELPER METHODS ====================

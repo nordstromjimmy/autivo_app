@@ -134,6 +134,7 @@ class VehicleServiceTab extends ConsumerWidget {
                   builder: (context) => MaintenanceHistoryScreen(
                     vehicleId: vehicle.id,
                     vehicleName: '${vehicle.make} ${vehicle.model}',
+                    vehicle: vehicle,
                   ),
                 ),
               );
