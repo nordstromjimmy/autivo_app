@@ -18,6 +18,7 @@ class PdfExportHelper {
   }) async {
     // Check if user can export PDF
     final checker = ref.read(featureCheckerProvider);
+    // TODO remove comments to make it require premium again
     //final canExportPDF = checker.canUse(AppFeature.exportMaintenancePDF);
     final canExportPDF = true;
 

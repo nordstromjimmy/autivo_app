@@ -52,7 +52,7 @@ class VehicleDetailsScreen extends ConsumerWidget {
             ),
           ],
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
+            preferredSize: const Size.fromHeight(68),
             child: Column(
               children: [
                 TabBar(

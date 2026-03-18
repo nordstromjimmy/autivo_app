@@ -27,7 +27,7 @@ class VehicleReceiptsTab extends ConsumerWidget {
         // Add receipt button at bottom
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
@@ -138,7 +138,6 @@ class VehicleReceiptsTab extends ConsumerWidget {
 
         // "View all" button if more receipts exist
         if (hasMore) ...[
-          const SizedBox(height: 2),
           OutlinedButton.icon(
             onPressed: () {
               Navigator.push(

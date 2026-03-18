@@ -28,7 +28,7 @@ class VehicleServiceTab extends ConsumerWidget {
         // Add service button at bottom
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
