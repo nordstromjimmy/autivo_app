@@ -17,33 +17,35 @@ class SyncService {
     try {
       final data = {
         'id': vehicle.id,
-        'user_id': SupabaseConfig.currentUserId,
+        'user_id': vehicle.userId,
         'registration_number': vehicle.registrationNumber,
         'make': vehicle.make,
         'model': vehicle.model,
         'year': vehicle.year,
         'fuel_type': vehicle.fuelType,
         'engine_size': vehicle.engineSize,
-        'next_besiktning_date': vehicle.nextBesiktningDate?.toIso8601String(),
         'current_mileage': vehicle.currentMileage,
         'ownership_start_date': vehicle.ownershipStartDate?.toIso8601String(),
+        'next_besiktning_date': vehicle.nextBesiktningDate?.toIso8601String(),
         'verification_level': vehicle.verificationLevel,
         'verified_at': vehicle.verifiedAt?.toIso8601String(),
         'verification_proof': vehicle.verificationProof,
         'verification_confidence': vehicle.verificationConfidence,
         'created_at': vehicle.createdAt.toIso8601String(),
         'updated_at': vehicle.updatedAt.toIso8601String(),
+        'insurance_company': vehicle.insuranceCompany,
+        'insurance_type': vehicle.insuranceType,
+        'insurance_cost_per_year': vehicle.insuranceCostPerYear,
+        'insurance_renewal_date': vehicle.insuranceRenewalDate
+            ?.toIso8601String(),
+        'insurance_policy_number': vehicle.insurancePolicyNumber,
       };
 
-      final response = await _client
-          .from(vehiclesTable)
-          .upsert(data)
-          .select()
-          .single();
+      await SupabaseConfig.client.from('vehicles').upsert(data);
 
-      return response['id'] as String;
+      return vehicle.id;
     } catch (e) {
-      print('Error uploading vehicle: $e');
+      print('Error uploading vehicle to Supabase: $e');
       return null;
     }
   }

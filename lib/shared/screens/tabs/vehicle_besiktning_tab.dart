@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../features/vehicles/models/vehicle.dart';
 import '../../../features/inspection/widgets/action_card.dart';
 import '../../../features/inspection/widgets/besiktning_status_card.dart';
+import '../../../features/vehicles/widgets/insurance_info_card.dart';
 import '../../../features/vehicles/widgets/vehicle_info_card.dart';
 import '../../../features/inspection/screens/besiktning_checklist_screen.dart';
 import '../../../features/inspection/screens/common_issues_screen.dart';
@@ -15,7 +16,7 @@ class VehicleBesiktningTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,7 +24,10 @@ class VehicleBesiktningTab extends StatelessWidget {
             // Vehicle info card
             VehicleInfoCard(vehicle: vehicle),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+
+            // Insurance info card
+            InsuranceInfoCard(vehicle: vehicle),
 
             // Besiktning status card
             BesiktningStatusCard(vehicle: vehicle),

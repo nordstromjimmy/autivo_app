@@ -23,20 +23,6 @@ class BesiktningStatusCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.event, color: urgencyColor, size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  'Nästa besiktning',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
             // Date and countdown
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -45,10 +31,17 @@ class BesiktningStatusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      'Nästa besiktning',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
                       _formatDate(vehicle.nextBesiktningDate!),
                       style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),

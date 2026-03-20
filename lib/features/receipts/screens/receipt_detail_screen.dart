@@ -90,7 +90,7 @@ class ReceiptDetailScreen extends ConsumerWidget {
             color: Theme.of(context).colorScheme.surface,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -109,49 +109,51 @@ class ReceiptDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     // Details row
-                    Row(
+                    Column(
                       children: [
                         // Date
                         if (receipt.date != null) ...[
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _formatDate(receipt.date!),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _formatDate(receipt.date!),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-
+                        const SizedBox(height: 6),
                         // Amount
                         if (receipt.amount != null) ...[
                           if (receipt.date != null) ...[
-                            const SizedBox(width: 20),
-                            Text(
-                              '•',
-                              style: TextStyle(color: Colors.grey[400]),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.monetization_on,
+                                  size: 16,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${receipt.amount!.toStringAsFixed(0)} kr',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 20),
                           ],
-                          Icon(
-                            Icons.payments,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${receipt.amount!.toStringAsFixed(0)} kr',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[700],
-                            ),
-                          ),
                         ],
                       ],
                     ),

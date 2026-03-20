@@ -236,7 +236,7 @@ class _AddMaintenanceScreenState extends ConsumerState<AddMaintenanceScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(6),
             children: [
               // Type selection card
               Card(

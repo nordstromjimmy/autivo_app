@@ -247,7 +247,7 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(6),
             children: [
               // Image preview/picker card
               Card(

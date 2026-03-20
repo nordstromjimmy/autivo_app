@@ -226,6 +226,47 @@ class VehicleRepository {
       userId: data['user_id'] as String,
       needsSync: false, // Just pulled from cloud
       lastSyncedAt: DateTime.now(),
+      insuranceCompany: data['insurance_company'] as String?,
+      insuranceType: data['insurance_type'] as String?,
+      insuranceCostPerYear: data['insurance_cost_per_year'] != null
+          ? (data['insurance_cost_per_year'] as num).toDouble()
+          : null,
+      insuranceRenewalDate: data['insurance_renewal_date'] != null
+          ? DateTime.parse(data['insurance_renewal_date'] as String)
+          : null,
+      insurancePolicyNumber: data['insurance_policy_number'] as String?,
     );
+  }
+
+  Future<void> clearInsurance(Vehicle vehicle) async {
+    final clearedVehicle = Vehicle(
+      id: vehicle.id,
+      userId: vehicle.userId,
+      registrationNumber: vehicle.registrationNumber,
+      make: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year,
+      fuelType: vehicle.fuelType,
+      engineSize: vehicle.engineSize,
+      currentMileage: vehicle.currentMileage,
+      ownershipStartDate: vehicle.ownershipStartDate,
+      nextBesiktningDate: vehicle.nextBesiktningDate,
+      verificationLevel: vehicle.verificationLevel,
+      verifiedAt: vehicle.verifiedAt,
+      verificationProof: vehicle.verificationProof,
+      verificationConfidence: vehicle.verificationConfidence,
+      createdAt: vehicle.createdAt,
+      updatedAt: DateTime.now(),
+      needsSync: true,
+      supabaseId: vehicle.supabaseId,
+      lastSyncedAt: vehicle.lastSyncedAt,
+      insuranceCompany: null,
+      insuranceType: null,
+      insuranceCostPerYear: null,
+      insuranceRenewalDate: null,
+      insurancePolicyNumber: null,
+    );
+
+    await update(clearedVehicle);
   }
 }

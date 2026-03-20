@@ -4,7 +4,6 @@ import '../../../features/maintenance/models/maintenance_record.dart';
 import '../../../features/vehicles/models/vehicle.dart';
 import '../../../features/maintenance/providers/maintenance_provider.dart';
 import '../../../features/maintenance/widgets/maintenance_list_item.dart';
-import '../../../features/maintenance/screens/add_maintenance_screen.dart';
 import '../../../features/maintenance/screens/maintenance_history_screen.dart';
 
 class VehicleServiceTab extends ConsumerWidget {
@@ -23,42 +22,6 @@ class VehicleServiceTab extends ConsumerWidget {
           child: maintenanceRecords.isEmpty
               ? _buildEmptyState(context)
               : _buildMaintenanceList(context, maintenanceRecords),
-        ),
-
-        // Add service button at bottom
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AddMaintenanceScreen(vehicleId: vehicle.id),
-                  ),
-                );
-              },
-              label: const Text('Lägg till'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
         ),
       ],
     );

@@ -58,7 +58,7 @@ class VehicleInfoCard extends StatelessWidget {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.settings),
+                            icon: const Icon(Icons.edit_outlined),
                           ),
                         ],
                       ),

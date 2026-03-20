@@ -85,6 +85,22 @@ class Vehicle extends HiveObject {
   @HiveField(24)
   int? verificationConfidence; // 0-100 confidence score from OCR validation
 
+  // ==================== INSURANCE  ====================
+  @HiveField(25)
+  final String? insuranceCompany;
+
+  @HiveField(26)
+  final double? insuranceCostPerYear;
+
+  @HiveField(27)
+  final DateTime? insuranceRenewalDate;
+
+  @HiveField(28)
+  final String? insurancePolicyNumber;
+
+  @HiveField(29)
+  final String? insuranceType;
+
   Vehicle({
     required this.id,
     required this.registrationNumber,
@@ -111,7 +127,12 @@ class Vehicle extends HiveObject {
     this.needsSync = true, // Default to needing sync (new records)
     this.userId,
     DateTime? updatedAt,
-    this.verificationConfidence, // NEW: Confidence score
+    this.verificationConfidence,
+    this.insuranceCompany,
+    this.insuranceCostPerYear,
+    this.insuranceRenewalDate,
+    this.insurancePolicyNumber,
+    this.insuranceType,
   }) : createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
@@ -220,6 +241,19 @@ class Vehicle extends HiveObject {
     }
   }
 
+  String get insuranceTypeDisplay {
+    switch (insuranceType) {
+      case 'comprehensive':
+        return 'Helförsäkring';
+      case 'half':
+        return 'Halvförsäkring';
+      case 'liability':
+        return 'Trafikförsäkring';
+      default:
+        return 'Okänd';
+    }
+  }
+
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}';
   }
@@ -251,6 +285,11 @@ class Vehicle extends HiveObject {
     String? userId,
     DateTime? updatedAt,
     int? verificationConfidence,
+    String? insuranceCompany,
+    double? insuranceCostPerYear,
+    DateTime? insuranceRenewalDate,
+    String? insurancePolicyNumber,
+    String? insuranceType,
   }) {
     return Vehicle(
       id: id ?? this.id,
@@ -278,7 +317,13 @@ class Vehicle extends HiveObject {
       userId: userId ?? this.userId,
       updatedAt: updatedAt ?? this.updatedAt,
       verificationConfidence:
-          verificationConfidence ?? this.verificationConfidence, // NEW
+          verificationConfidence ?? this.verificationConfidence,
+      insuranceCompany: insuranceCompany ?? this.insuranceCompany,
+      insuranceCostPerYear: insuranceCostPerYear ?? this.insuranceCostPerYear,
+      insuranceRenewalDate: insuranceRenewalDate ?? this.insuranceRenewalDate,
+      insurancePolicyNumber:
+          insurancePolicyNumber ?? this.insurancePolicyNumber,
+      insuranceType: insuranceType ?? this.insuranceType,
     );
   }
 }

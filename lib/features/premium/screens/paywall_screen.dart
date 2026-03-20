@@ -201,12 +201,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
               _buildFeatureItem(
                 context,
-                icon: Icons.file_download,
-                title: 'Excel-export',
-                description: 'Exportera data till Excel/CSV',
-              ),
-              _buildFeatureItem(
-                context,
                 icon: Icons.priority_high,
                 title: 'Prioriterad support',
                 description: 'Få hjälp snabbare via e-post',

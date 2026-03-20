@@ -1,22 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/media/pdf_export_helper.dart';
+import '../models/vehicle.dart';
 import '../providers/vehicle_provider.dart';
 import '../../../shared/screens/tabs/vehicle_besiktning_tab.dart';
 import '../../../shared/screens/tabs/vehicle_service_tab.dart';
 import '../../../shared/screens/tabs/vehicle_receipts_tab.dart';
+import '../../maintenance/screens/add_maintenance_screen.dart';
+import '../../receipts/screens/add_receipt_screen.dart';
 
-class VehicleDetailsScreen extends ConsumerWidget {
+class VehicleDetailsScreen extends ConsumerStatefulWidget {
   final String vehicleId;
 
   const VehicleDetailsScreen({super.key, required this.vehicleId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VehicleDetailsScreen> createState() =>
+      _VehicleDetailsScreenState();
+}
+
+class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
+  int _selectedIndex = 0; // Start on first tab
+
+  @override
+  Widget build(BuildContext context) {
     final vehicles = ref.watch(vehiclesProvider);
 
     // Try to find the vehicle
-    final vehicleIndex = vehicles.indexWhere((v) => v.id == vehicleId);
+    final vehicleIndex = vehicles.indexWhere((v) => v.id == widget.vehicleId);
 
     // If vehicle doesn't exist (was deleted), close this screen
     if (vehicleIndex == -1) {
@@ -32,56 +43,114 @@ class VehicleDetailsScreen extends ConsumerWidget {
 
     final vehicle = vehicles[vehicleIndex];
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text(vehicle.registrationNumber),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf),
-              tooltip: 'Exportera rapport',
-              onPressed: () {
-                PdfExportHelper.exportVehiclePDF(
-                  context: context,
-                  ref: ref,
-                  vehicle: vehicle,
-                );
-              },
-            ),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(68),
-            child: Column(
-              children: [
-                TabBar(
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  tabs: const [
-                    Tab(icon: Icon(Icons.event), text: 'Besiktning'),
-                    Tab(icon: Icon(Icons.build), text: 'Service'),
-                    Tab(icon: Icon(Icons.receipt), text: 'Kvitton'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        body: Column(
+    // Define the pages
+    final pages = [
+      VehicleBesiktningTab(vehicle: vehicle),
+      VehicleServiceTab(vehicle: vehicle),
+      VehicleReceiptsTab(vehicle: vehicle),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Column(
           children: [
-            // Tab views
-            Expanded(
-              child: TabBarView(
-                children: [
-                  VehicleBesiktningTab(vehicle: vehicle),
-                  VehicleServiceTab(vehicle: vehicle),
-                  VehicleReceiptsTab(vehicle: vehicle),
-                ],
+            Text(
+              vehicle.registrationNumber,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '${vehicle.make} ${vehicle.model}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
               ),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Exportera rapport',
+            onPressed: () {
+              PdfExportHelper.exportVehiclePDF(
+                context: context,
+                ref: ref,
+                vehicle: vehicle,
+              );
+            },
+          ),
+        ],
       ),
+      body: IndexedStack(index: _selectedIndex, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.event_outlined),
+            selectedIcon: Icon(Icons.event),
+            label: 'Besiktning',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.build_outlined),
+            selectedIcon: Icon(Icons.build),
+            label: 'Service',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Kvitton',
+          ),
+          /*           NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'PDF',
+          ), */
+        ],
+      ),
+      floatingActionButton: _buildContextAwareFAB(vehicle),
     );
+  }
+
+  /// Build FAB based on selected tab
+  Widget _buildContextAwareFAB(Vehicle vehicle) {
+    switch (_selectedIndex) {
+      case 1: // Service tab
+        return FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    AddMaintenanceScreen(vehicleId: vehicle.id),
+              ),
+            );
+          },
+          tooltip: 'Lägg till service',
+          child: const Icon(Icons.add),
+        );
+
+      case 2: // Receipts tab
+        return FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddReceiptScreen(vehicleId: vehicle.id),
+              ),
+            );
+          },
+          tooltip: 'Lägg till kvitto',
+          child: const Icon(Icons.add),
+        );
+
+      default:
+        return const SizedBox.shrink(); // Hide FAB on Besiktning tab
+    }
   }
 }

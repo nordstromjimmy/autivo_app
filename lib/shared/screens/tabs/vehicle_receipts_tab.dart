@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/vehicles/models/vehicle.dart';
 import '../../../features/receipts/providers/receipt_provider.dart';
 import '../../../features/receipts/widgets/receipt_card.dart';
-import '../../../features/receipts/screens/add_receipt_screen.dart';
 import '../../../features/receipts/screens/receipts_gallery_screen.dart';
 
 class VehicleReceiptsTab extends ConsumerWidget {
@@ -22,42 +21,6 @@ class VehicleReceiptsTab extends ConsumerWidget {
           child: receipts.isEmpty
               ? _buildEmptyState(context)
               : _buildReceiptsGrid(context, receipts, ref),
-        ),
-
-        // Add receipt button at bottom
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AddReceiptScreen(vehicleId: vehicle.id),
-                  ),
-                );
-              },
-              label: const Text('Lägg till'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
         ),
       ],
     );
