@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/maintenance/repositories/maintenance_repository.dart';
 import '../../../features/receipts/providers/receipt_provider.dart';
@@ -106,32 +105,35 @@ class SyncManager {
     }
   }
 
-  /// Perform full sync with UI feedback
-  /// This is the main entry point for all sync operations
-  Future<void> performFullSyncWithUI(
+  /// Perform full sync with optional UI feedback
+  /// Set showDialog=false for pull-to-refresh scenarios
+  Future<SyncResult> performFullSyncWithUI(
     BuildContext context,
-    WidgetRef ref,
-  ) async {
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Synkroniserar...'),
-              ],
+    WidgetRef ref, {
+    bool showLoadingDialog = true,
+  }) async {
+    // Show loading (optional)
+    if (showLoadingDialog) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Synkroniserar...'),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
 
     try {
       // STEP 1: Migrate if needed
@@ -145,8 +147,8 @@ class SyncManager {
       // STEP 3: Invalidate providers
       _invalidateAllProviders();
 
-      // Close loading
-      if (context.mounted) Navigator.pop(context);
+      // Close loading (if shown)
+      if (showLoadingDialog && context.mounted) Navigator.pop(context);
 
       // Show result
       if (context.mounted) {
@@ -160,11 +162,21 @@ class SyncManager {
           CustomSnackBar.showError(context, result.message);
         }
       }
+
+      return result; // ✅ Return the result
     } catch (e) {
-      if (context.mounted) Navigator.pop(context);
+      if (showLoadingDialog && context.mounted) Navigator.pop(context);
       if (context.mounted) {
         CustomSnackBar.showError(context, 'Synkronisering misslyckades: $e');
       }
+
+      return SyncResult(
+        success: false,
+        message: 'Synkronisering misslyckades: $e',
+        vehiclesSynced: 0,
+        recordsSynced: 0,
+        receiptsSynced: 0,
+      );
     }
   }
 

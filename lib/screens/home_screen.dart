@@ -26,7 +26,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _performSync(BuildContext context, WidgetRef ref) async {
-    await ref.read(syncManagerProvider).performFullSyncWithUI(context, ref);
+    await ref
+        .read(syncManagerProvider)
+        .performFullSyncWithUI(context, ref, showLoadingDialog: true);
   }
 
   @override
@@ -84,7 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => _handleRefresh(syncManager),
+        onRefresh: _handleRefresh,
         child: vehicles.isEmpty
             ? SafeArea(
                 child: LayoutBuilder(
@@ -170,32 +172,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   /// Handle pull-to-refresh
-  Future<void> _handleRefresh(SyncManager syncManager) async {
-    // Reset auto-sync flag so we can sync again
+  Future<void> _handleRefresh() async {
+    final syncManager = ref.read(syncManagerProvider);
+
+    // Reset auto-sync flag
     _hasAutoSynced = false;
 
     // Only sync if user is signed in
     if (!syncManager.isSignedIn) {
-      // Show message that sync requires sign in
       if (mounted) {
         CustomSnackBar.showInfo(context, 'Logga in för att synkronisera');
       }
       return;
     }
 
-    try {
-      // Perform full sync
-      await syncManager.fullSync();
-
-      // Show success message
-      if (mounted) {
-        CustomSnackBar.showSuccess(context, 'Uppdaterad');
-      }
-    } catch (e) {
-      // Show error message
-      if (mounted) {
-        CustomSnackBar.showError(context, 'Synkronisering misslyckades: $e');
-      }
-    }
+    // Use the same method, but without dialog (RefreshIndicator shows spinner)
+    await syncManager.performFullSyncWithUI(
+      context,
+      ref,
+      showLoadingDialog:
+          false, // Don't show dialog, RefreshIndicator handles loading
+    );
   }
 }

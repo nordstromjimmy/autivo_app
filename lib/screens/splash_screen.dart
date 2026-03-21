@@ -63,6 +63,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Get screen size for responsive sizing
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.height < 600;
+    final isTablet = size.shortestSide >= 600;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -77,32 +82,61 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             end: Alignment.bottomRight,
           ),
         ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image(image: AssetImage('assets/images/logo2.png')),
-                Text(
-                  'AUTIVO',
-                  style: TextStyle(
-                    fontSize: 64,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 8,
+        // Add SafeArea to avoid notch/status bar issues
+        child: SafeArea(
+          child: Center(
+            // Wrap in SingleChildScrollView as safety net
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min, // Important!
+                    children: [
+                      // Responsive logo size
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isTablet ? 300 : 200,
+                          maxHeight: isTablet ? 300 : 200,
+                        ),
+                        child: Image.asset(
+                          'assets/images/logo2.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+
+                      SizedBox(height: isSmallScreen ? 16 : 24),
+
+                      // Responsive title size
+                      Text(
+                        'AUTIVO',
+                        style: TextStyle(
+                          fontSize: isTablet ? 80 : (isSmallScreen ? 48 : 64),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: isTablet ? 12 : 8,
+                        ),
+                      ),
+
+                      SizedBox(height: isSmallScreen ? 8 : 16),
+
+                      // Responsive subtitle size
+                      Text(
+                        'Din bils digitala historia',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: isTablet ? 24 : (isSmallScreen ? 14 : 18),
+                          color: Colors.white.withValues(alpha: 0.9),
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Din bils digitala historia',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white.withValues(alpha: 0.9),
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
