@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'notification_service.dart';
 import 'notification_types.dart';
 import 'notification_preferences.dart';
@@ -15,12 +16,10 @@ class NotificationScheduler {
     required String vehicleRegNumber,
     required DateTime inspectionDate,
   }) async {
-    // ✅ Add await
     if (!await _preferences.isEnabled(NotificationType.inspectionReminder)) {
       return;
     }
 
-    // ✅ Add await
     final daysBefore = await _preferences.getDaysBefore(
       NotificationType.inspectionReminder,
     );
@@ -62,12 +61,10 @@ class NotificationScheduler {
     required String vehicleRegNumber,
     required DateTime renewalDate,
   }) async {
-    // ✅ Add await
     if (!await _preferences.isEnabled(NotificationType.insuranceRenewal)) {
       return;
     }
 
-    // ✅ Add await
     final daysBefore = await _preferences.getDaysBefore(
       NotificationType.insuranceRenewal,
     );
@@ -127,3 +124,10 @@ class NotificationScheduler {
     return typeId + entityHash;
   }
 }
+
+final notificationSchedulerProvider = Provider<NotificationScheduler>((ref) {
+  return NotificationScheduler(
+    NotificationService(),
+    NotificationPreferences(),
+  );
+});

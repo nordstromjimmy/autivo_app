@@ -147,9 +147,9 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
       }
 
       if (isEditMode) {
-        ref.read(vehiclesProvider.notifier).updateVehicle(vehicle);
+        ref.read(vehiclesNotifierProvider.notifier).updateVehicle(vehicle);
       } else {
-        ref.read(vehiclesProvider.notifier).addVehicle(vehicle);
+        ref.read(vehiclesNotifierProvider.notifier).addVehicle(vehicle);
       }
 
       Navigator.pop(context);
@@ -200,7 +200,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
     if (confirm == true && mounted) {
       // Delete the vehicle
-      final notifier = ref.read(vehiclesProvider.notifier);
+      final notifier = ref.read(vehiclesNotifierProvider.notifier);
       final deleted = await notifier.deleteVehicle(vehicle.id);
 
       // Check if deletion succeeded

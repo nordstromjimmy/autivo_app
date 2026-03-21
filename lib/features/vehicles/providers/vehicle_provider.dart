@@ -2,14 +2,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vehicle.dart';
 import '../repositories/vehicle_repository.dart';
 import '../../maintenance/providers/maintenance_provider.dart';
+import '../../../core/services/notifications/notification_scheduler.dart';
 
 // Provider for the vehicle repository
-final vehicleRepositoryProvider = Provider((ref) => VehicleRepository());
+final vehicleRepositoryProvider = Provider<VehicleRepository>((ref) {
+  final notificationScheduler = ref.watch(notificationSchedulerProvider);
+  return VehicleRepository(notificationScheduler: notificationScheduler);
+});
 
-// Provider for vehicles list
-final vehiclesProvider = NotifierProvider<VehiclesNotifier, List<Vehicle>>(
-  VehiclesNotifier.new,
-);
+// Provider for vehicles list (read-only)
+final vehiclesProvider = Provider<List<Vehicle>>((ref) {
+  // Watch the notifier so this updates when vehicles change
+  return ref.watch(vehiclesNotifierProvider);
+});
+
+// NotifierProvider for VehiclesNotifier
+final vehiclesNotifierProvider =
+    NotifierProvider<VehiclesNotifier, List<Vehicle>>(VehiclesNotifier.new);
 
 class VehiclesNotifier extends Notifier<List<Vehicle>> {
   late VehicleRepository _repository;

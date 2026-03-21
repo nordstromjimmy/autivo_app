@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:mina_fordon/core/services/notifications/notification_scheduler.dart';
 import '../models/vehicle.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../core/services/sync/sync_service.dart';
@@ -6,6 +7,10 @@ import '../../../core/services/sync/sync_service.dart';
 class VehicleRepository {
   static const String boxName = 'vehicles';
   final SyncService _syncService = SyncService();
+  final NotificationScheduler? _notificationScheduler;
+
+  VehicleRepository({NotificationScheduler? notificationScheduler})
+    : _notificationScheduler = notificationScheduler;
 
   // Get Hive box
   Box<Vehicle> get _box => Hive.box<Vehicle>(boxName);
@@ -57,6 +62,11 @@ class VehicleRepository {
     if (SupabaseConfig.isSignedIn) {
       await _trySyncVehicle(vehicle);
     }
+
+    // Schedule notifications if scheduler is available
+    if (_notificationScheduler != null) {
+      await _scheduleNotifications(vehicle);
+    }
   }
 
   /// Delete vehicle
@@ -67,6 +77,11 @@ class VehicleRepository {
     // Block if synced and offline
     if (vehicle.supabaseId != null && !SupabaseConfig.isSignedIn) {
       return false;
+    }
+
+    // Cancel notifications before deleting
+    if (_notificationScheduler != null) {
+      await _notificationScheduler.cancelInspectionReminder(vehicleId);
     }
 
     // Delete normally
@@ -195,6 +210,28 @@ class VehicleRepository {
 
     // Cloud is newer or equal - use cloud version
     return cloud.copyWith(needsSync: false);
+  }
+
+  Future<void> _scheduleNotifications(Vehicle vehicle) async {
+    if (_notificationScheduler == null) return;
+
+    // Schedule inspection reminder
+    if (vehicle.nextBesiktningDate != null) {
+      await _notificationScheduler.scheduleInspectionReminder(
+        vehicleId: vehicle.id,
+        vehicleRegNumber: vehicle.registrationNumber,
+        inspectionDate: vehicle.nextBesiktningDate!,
+      );
+    }
+
+    // Schedule insurance renewal reminder
+    if (vehicle.insuranceRenewalDate != null) {
+      await _notificationScheduler.scheduleInsuranceRenewal(
+        vehicleId: vehicle.id,
+        vehicleRegNumber: vehicle.registrationNumber,
+        renewalDate: vehicle.insuranceRenewalDate!,
+      );
+    }
   }
 
   /// Convert Supabase map to Vehicle object
