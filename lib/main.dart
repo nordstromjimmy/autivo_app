@@ -3,6 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'core/services/notifications/notification_service.dart';
 import 'features/inspection/models/checklist_state.dart';
 import 'features/receipts/models/receipt.dart';
 import 'features/vehicles/models/vehicle.dart';
@@ -18,6 +20,10 @@ import 'core/services/auth/user_session_tracker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  tz.initializeTimeZones();
+
+  await NotificationService().initialize();
 
   await dotenv.load(fileName: ".env");
 

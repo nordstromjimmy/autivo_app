@@ -13,7 +13,6 @@ class InsuranceInfoCard extends StatelessWidget {
     final hasInsurance = vehicle.insuranceCompany != null;
 
     return Card(
-      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
@@ -132,7 +131,7 @@ class InsuranceInfoCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          const SizedBox(width: 12),
+          const SizedBox(width: 2),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
