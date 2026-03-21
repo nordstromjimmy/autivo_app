@@ -672,7 +672,7 @@ class _VehicleVerificationScreenState
       verificationConfidence: result.confidenceScore,
     );
 
-    ref.read(vehiclesProvider.notifier).updateVehicle(updatedVehicle);
+    ref.read(vehiclesNotifierProvider.notifier).updateVehicle(updatedVehicle);
 
     CustomSnackBar.showSuccess(context, 'Fordon verifierat!');
   }
@@ -713,7 +713,7 @@ class _VehicleVerificationScreenState
       verificationConfidence: null,
     );
 
-    ref.read(vehiclesProvider.notifier).updateVehicle(updatedVehicle);
+    ref.read(vehiclesNotifierProvider.notifier).updateVehicle(updatedVehicle);
 
     if (mounted) {
       CustomSnackBar.showInfo(context, 'Verifiering återställd');

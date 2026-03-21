@@ -297,6 +297,7 @@ class SyncManager {
   /// Refresh providers to update UI after sync
   void _invalidateAllProviders() {
     // Vehicles
+    _ref.invalidate(vehiclesNotifierProvider);
     _ref.invalidate(vehiclesProvider);
 
     // Maintenance
