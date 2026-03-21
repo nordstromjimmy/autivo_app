@@ -15,15 +15,13 @@ class PremiumFeatures {
   /// Check if user has an active account (logged into Supabase)
   /// NOW REACTIVE - watches currentUserProvider
   bool get hasAccount {
-    final user = ref.watch(
-      currentUserProvider,
-    ); // Watch provider, not direct read!
+    final user = ref.watch(currentUserProvider);
     return user != null;
   }
 
   /// Check if user has premium from RevenueCat (sync - uses cached state)
   bool get hasPremiumFromRevenueCat {
-    final premiumAsyncValue = ref.read(premiumStatusProvider);
+    final premiumAsyncValue = ref.watch(premiumStatusProvider);
     return premiumAsyncValue.maybeWhen(
       data: (isPremium) => isPremium,
       orElse: () => false,
@@ -33,7 +31,7 @@ class PremiumFeatures {
   /// Check if user has premium from Supabase users table (manual grant)
   /// This is now synchronous and uses a cached provider
   bool get hasPremiumFromSupabase {
-    final supabasePremiumAsyncValue = ref.read(supabasePremiumStatusProvider);
+    final supabasePremiumAsyncValue = ref.watch(supabasePremiumStatusProvider);
     return supabasePremiumAsyncValue.maybeWhen(
       data: (isPremium) => isPremium,
       orElse: () => false,

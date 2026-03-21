@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/auth/auth_service.dart';
 import '../../../core/services/sync/sync_manager.dart';
+import '../../premium/providers/combined_premium_provider.dart';
+import '../../premium/providers/purchase_provider.dart';
 
 // Provider for auth service
 final authServiceProvider = Provider((ref) => AuthService());
@@ -60,6 +62,9 @@ class AuthNotifier extends Notifier<AsyncValue<void>> {
           await _syncManager.migrateAnonymousData(response.user!.id);
         }
 
+        // Refresh premium status after signup
+        _refreshPremiumStatus();
+
         state = const AsyncValue.data(null);
       } else {
         state = AsyncValue.error(
@@ -85,6 +90,10 @@ class AuthNotifier extends Notifier<AsyncValue<void>> {
       if (response.user != null) {
         // Pull data from cloud after sign in
         await _syncManager.pullOnly();
+
+        // Refresh premium status after login
+        _refreshPremiumStatus();
+
         state = const AsyncValue.data(null);
       } else {
         state = AsyncValue.error('Inloggning misslyckades', StackTrace.current);
@@ -100,6 +109,10 @@ class AuthNotifier extends Notifier<AsyncValue<void>> {
 
     try {
       await _authService.signOut();
+
+      // Clear premium status cache after logout
+      _refreshPremiumStatus();
+
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
@@ -116,5 +129,13 @@ class AuthNotifier extends Notifier<AsyncValue<void>> {
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
+  }
+
+  /// Refresh premium status providers
+  void _refreshPremiumStatus() {
+    // Invalidate all premium-related providers
+    ref.invalidate(supabasePremiumStatusProvider);
+    ref.invalidate(premiumStatusProvider);
+    // combinedPremiumStatusProvider will auto-refresh since it depends on the above
   }
 }
