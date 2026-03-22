@@ -335,7 +335,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 // Continue without account
                 TextButton(
-                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  onPressed: isLoading
+                      ? null
+                      : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomeScreen(),
+                          ),
+                        ),
                   child: const Text('Fortsätt utan konto'),
                 ),
               ],

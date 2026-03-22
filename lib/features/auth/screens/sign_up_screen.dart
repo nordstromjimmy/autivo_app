@@ -365,7 +365,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
                 // Benefits card
                 Card(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.secondary,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(

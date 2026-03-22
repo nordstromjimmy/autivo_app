@@ -84,6 +84,7 @@ class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
       ),
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: NavigationBar(
+        indicatorColor: Colors.transparent,
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() {
@@ -93,24 +94,19 @@ class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.event_outlined),
-            selectedIcon: Icon(Icons.event),
+            selectedIcon: Icon(Icons.event, color: Colors.blue),
             label: 'Besiktning',
           ),
           NavigationDestination(
             icon: Icon(Icons.build_outlined),
-            selectedIcon: Icon(Icons.build),
+            selectedIcon: Icon(Icons.build, color: Colors.blue),
             label: 'Service',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
+            selectedIcon: Icon(Icons.receipt_long, color: Colors.blue),
             label: 'Kvitton',
           ),
-          /*           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'PDF',
-          ), */
         ],
       ),
       floatingActionButton: _buildContextAwareFAB(vehicle),
