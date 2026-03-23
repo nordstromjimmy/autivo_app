@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'core/services/notifications/notification_service.dart';
 import 'features/inspection/models/checklist_state.dart';
 import 'features/receipts/models/receipt.dart';
@@ -22,8 +23,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Europe/Stockholm'));
 
-  await NotificationService().initialize();
+  final notificationService = NotificationService();
+  await notificationService.initialize();
 
   await dotenv.load(fileName: ".env");
 

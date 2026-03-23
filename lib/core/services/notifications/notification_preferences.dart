@@ -34,15 +34,15 @@ class NotificationPreferences {
   int _getDefaultDaysBefore(NotificationType type) {
     switch (type) {
       case NotificationType.inspectionReminder:
-        return 14; // 2 weeks
+        return 30; // Changed from 14 to 30
       case NotificationType.serviceReminder:
-        return 7; // 1 week
+        return 30; // Changed from 7 to 30
       case NotificationType.insuranceRenewal:
-        return 30; // 1 month
+        return 30; // Already 30
       case NotificationType.maintenanceDue:
-        return 7;
+        return 30; // Changed from 7 to 30
       case NotificationType.fuelReminder:
-        return 1;
+        return 30; // Changed from 1 to 30
     }
   }
 }

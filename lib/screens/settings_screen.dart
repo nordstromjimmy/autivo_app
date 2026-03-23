@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -20,6 +20,7 @@ import '../features/premium/widgets/premium_status_card.dart';
 import '../shared/widgets/theme_selector.dart';
 import '../features/auth/screens/sign_in_screen.dart';
 import 'debug_screen.dart';
+import 'notification_settings_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -29,6 +30,9 @@ class SettingsScreen extends ConsumerWidget {
     final isSignedIn = ref.watch(isSignedInProvider);
     final currentUser = ref.watch(currentUserProvider);
     final syncManager = ref.read(syncManagerProvider);
+
+    // REMOVE IN PROD.
+    final bool debugMode = true;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Inställningar')),
@@ -73,19 +77,6 @@ class SettingsScreen extends ConsumerWidget {
               title: const Text('Synkronisera nu'),
               subtitle: const Text('Ladda upp och ner data'),
               onTap: () => _performSync(context, ref),
-            ),
-
-            // Sign out
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Logga ut'),
-              onTap: () => _handleLogout(context, ref),
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_forever, color: Colors.red),
-              title: const Text('Radera konto'),
-              onTap: () => _handleDeleteAccount(context, ref),
             ),
           ] else ...[
             // Not signed in - show sign in option
@@ -153,6 +144,34 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
           const _SectionHeader(title: 'Inställningar'),
           const ThemeSelectorCompact(),
+          ListTile(
+            leading: const Icon(Icons.notifications),
+            title: const Text('Notifikationer'),
+            subtitle: const Text('Hantera påminnelser'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          if (isSignedIn && currentUser != null) ...[
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Logga ut'),
+              onTap: () => _handleLogout(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              title: const Text('Radera konto'),
+              onTap: () => _handleDeleteAccount(context, ref),
+            ),
+          ] else
+            ...[],
           const Divider(),
           const _SectionHeader(title: 'Om'),
 
@@ -185,7 +204,8 @@ class SettingsScreen extends ConsumerWidget {
                 _openUrl(context, 'https://autivo.se/integritetspolicy'),
           ),
           Divider(),
-          if (kDebugMode) ...[
+          //if (kDebugMode) ...[
+          if (debugMode) ...[
             ListTile(
               leading: const Icon(Icons.bug_report),
               title: const Text('Debug Tools'),

@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'notification_types.dart';
 
@@ -42,7 +43,7 @@ class NotificationService {
 
   /// Request notification permissions
   Future<bool> requestPermissions() async {
-    // Android 13+ permissions
+    // Android 13+ notification permissions
     final androidImpl = _notifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -50,7 +51,7 @@ class NotificationService {
 
     if (androidImpl != null) {
       final granted = await androidImpl.requestNotificationsPermission();
-      if (granted != null) return granted;
+      if (granted == false) return false;
     }
 
     // iOS permissions
@@ -65,10 +66,29 @@ class NotificationService {
         badge: true,
         sound: true,
       );
-      return granted ?? false;
+      if (granted == false) return false;
     }
 
-    return true; // Default to true for older Android
+    // ✅ NEW: Request exact alarm permission (Android 12+)
+    if (await _isAndroid12OrHigher()) {
+      final status = await Permission.scheduleExactAlarm.request();
+      print('📅 Exact alarm permission: $status');
+
+      if (!status.isGranted) {
+        print('⚠️ Exact alarm permission denied! Notifications may not work.');
+        // On some Android versions, we need to open settings
+        await openAppSettings();
+      }
+    }
+
+    return true;
+  }
+
+  /// Check if Android 12 or higher
+  Future<bool> _isAndroid12OrHigher() async {
+    // You'll need device_info_plus for this
+    // For now, return true to always request permission
+    return true;
   }
 
   /// Schedule a notification
@@ -80,7 +100,20 @@ class NotificationService {
     required NotificationType type,
     String? payload,
   }) async {
-    final tzDateTime = tz.TZDateTime.from(scheduledDate, tz.local);
+    print('🔔 Scheduling notification:');
+    print('   ID: $id');
+    print('   Title: $title');
+    print('   Scheduled for: $scheduledDate');
+    print('   Current time: ${DateTime.now()}');
+
+    // ✅ FIX: Create TZ datetime properly (don't use .from())
+    final location = tz.getLocation('Europe/Stockholm');
+    final tzDateTime = tz.TZDateTime.from(scheduledDate, location);
+
+    print('   TZ DateTime: $tzDateTime');
+    print(
+      '   Time until notification: ${tzDateTime.difference(tz.TZDateTime.now(location))}',
+    );
 
     await _notifications.zonedSchedule(
       id,
@@ -93,6 +126,8 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
+
+    print('✅ Notification scheduled successfully!');
   }
 
   /// Cancel a notification

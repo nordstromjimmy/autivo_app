@@ -1,8 +1,11 @@
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../core/services/notifications/notification_service.dart';
+import '../core/services/notifications/notification_types.dart';
 import '../features/premium/providers/combined_premium_provider.dart';
 import '../features/premium/providers/purchase_provider.dart';
 import '../features/premium/utils/feature_checker.dart';
@@ -14,9 +17,10 @@ class DebugScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!kDebugMode) {
-      return const Scaffold(body: Center(child: Text('Debug mode only')));
-    }
+    // UNCOMMENT IN PROD.
+    // if (!kDebugMode) {
+    //   return const Scaffold(body: Center(child: Text('Debug mode only')));
+    // }
 
     final checker = ref.watch(featureCheckerProvider);
     final premiumFeatures = ref.watch(premiumFeaturesProvider);
@@ -135,6 +139,198 @@ class DebugScreen extends ConsumerWidget {
             title: const Text('View RevenueCat User ID'),
             subtitle: const Text('Show current app user ID'),
             onTap: () => _showAppUserId(context),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Notifications',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.notifications_active, color: Colors.blue),
+            title: const Text('Test Notification (5 sec)'),
+            subtitle: const Text('Schedule test notification'),
+            onTap: () async {
+              final service = NotificationService();
+              await service.initialize();
+              await service.requestPermissions();
+
+              final testDate = DateTime.now().add(const Duration(seconds: 5));
+
+              await service.schedule(
+                id: 999,
+                title: 'Test Besiktning Påminnelse',
+                body: 'Din besiktning är om 14 dagar för ABC123',
+                scheduledDate: testDate,
+                type: NotificationType.inspectionReminder,
+                payload: 'test',
+              );
+
+              if (context.mounted) {
+                CustomSnackBar.showSuccess(
+                  context,
+                  'Test notification scheduled in 5 seconds',
+                );
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.list, color: Colors.purple),
+            title: const Text('View Pending Notifications'),
+            onTap: () async {
+              final service = NotificationService();
+              final pending = await service.getPending();
+
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('Pending: ${pending.length}'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: pending
+                            .map(
+                              (n) =>
+                                  Text('ID: ${n.id}\n${n.title}\n${n.body}\n'),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.list, color: Colors.purple),
+            title: const Text('View Pending Notifications'),
+            subtitle: const Text('See all scheduled notifications'),
+            onTap: () async {
+              final service = NotificationService();
+              final pending = await service.getPending();
+
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Pending Notifications'),
+                    content: pending.isEmpty
+                        ? const Text('No notifications scheduled')
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: pending.map((notif) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Text(
+                                  'ID: ${notif.id}\n'
+                                  'Title: ${notif.title}\n'
+                                  'Body: ${notif.body}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings, color: Colors.orange),
+            title: const Text('Check Notification Permissions'),
+            subtitle: const Text('Request and check permissions'),
+            onTap: () async {
+              final service = NotificationService();
+              await service.initialize();
+
+              final granted = await service.requestPermissions();
+
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(
+                      granted
+                          ? '✅ Permissions Granted'
+                          : '❌ Permissions Denied',
+                    ),
+                    content: Text(
+                      granted
+                          ? 'Notifications are enabled and should work!'
+                          : 'Please enable notifications in system settings.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.check_circle, color: Colors.green),
+            title: const Text('Check All Permissions'),
+            onTap: () async {
+              final notifications = await Permission.notification.status;
+              final exactAlarm = await Permission.scheduleExactAlarm.status;
+
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Permission Status'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Notifications: $notifications'),
+                        Text('Exact Alarm: $exactAlarm'),
+                        const Divider(),
+                        Text(
+                          notifications.isGranted && exactAlarm.isGranted
+                              ? '✅ All permissions OK!'
+                              : '❌ Missing permissions!',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      if (!notifications.isGranted || !exactAlarm.isGranted)
+                        TextButton(
+                          onPressed: () => openAppSettings(),
+                          child: const Text('Open Settings'),
+                        ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
           ),
         ],
       ),

@@ -1,5 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:mina_fordon/core/services/notifications/notification_scheduler.dart';
+import '../../../core/services/notifications/notification_preferences.dart';
+import '../../../core/services/notifications/notification_service.dart';
+import '../../../core/services/notifications/notification_types.dart';
 import '../models/vehicle.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../core/services/sync/sync_service.dart';
@@ -8,9 +11,13 @@ class VehicleRepository {
   static const String boxName = 'vehicles';
   final SyncService _syncService = SyncService();
   final NotificationScheduler? _notificationScheduler;
+  final Function(String message)? _onNotificationEnabled;
 
-  VehicleRepository({NotificationScheduler? notificationScheduler})
-    : _notificationScheduler = notificationScheduler;
+  VehicleRepository({
+    NotificationScheduler? notificationScheduler,
+    Function(String message)? onNotificationEnabled,
+  }) : _notificationScheduler = notificationScheduler,
+       _onNotificationEnabled = onNotificationEnabled;
 
   // Get Hive box
   Box<Vehicle> get _box => Hive.box<Vehicle>(boxName);
@@ -65,6 +72,9 @@ class VehicleRepository {
 
     // Schedule notifications if scheduler is available
     if (_notificationScheduler != null) {
+      // Request permissions first time (if needed)
+      await _ensureNotificationPermissions();
+
       await _scheduleNotifications(vehicle);
     }
   }
@@ -212,8 +222,36 @@ class VehicleRepository {
     return cloud.copyWith(needsSync: false);
   }
 
+  /// Ensure notification permissions are granted
+  Future<void> _ensureNotificationPermissions() async {
+    final service = NotificationService();
+    await service.initialize();
+
+    final granted = await service.requestPermissions();
+
+    if (granted) {
+      final preferences = NotificationPreferences();
+      await preferences.setEnabled(NotificationType.inspectionReminder, true);
+
+      _onNotificationEnabled?.call('Besiktningspåminnelser aktiverade!');
+    } else {
+      print('⚠️ Notification permissions denied');
+    }
+  }
+
   Future<void> _scheduleNotifications(Vehicle vehicle) async {
     if (_notificationScheduler == null) return;
+
+    // Only request permissions if we actually have dates to schedule
+    final hasInspection = vehicle.nextBesiktningDate != null;
+    final hasInsurance = vehicle.insuranceRenewalDate != null;
+
+    if (!hasInspection && !hasInsurance) {
+      return; // No dates set, no need for permissions
+    }
+
+    // Request permissions only when needed
+    await _ensureNotificationPermissions();
 
     // Schedule inspection reminder
     if (vehicle.nextBesiktningDate != null) {

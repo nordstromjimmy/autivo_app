@@ -104,7 +104,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     }
   }
 
-  void _saveVehicle() {
+  Future<void> _saveVehicle() async {
     if (_formKey.currentState!.validate()) {
       final Vehicle vehicle;
 
@@ -124,7 +124,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               : null,
           nextBesiktningDate: _nextBesiktningDate,
           ownershipStartDate: _ownershipStartDate,
-          // Verification automatically preserved!
         );
       } else {
         // ADD MODE: Create new vehicle (no verification yet)
@@ -146,18 +145,59 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
         );
       }
 
+      // Save the vehicle
       if (isEditMode) {
-        ref.read(vehiclesNotifierProvider.notifier).updateVehicle(vehicle);
+        await ref
+            .read(vehiclesNotifierProvider.notifier)
+            .updateVehicle(vehicle);
       } else {
-        ref.read(vehiclesNotifierProvider.notifier).addVehicle(vehicle);
+        await ref.read(vehiclesNotifierProvider.notifier).addVehicle(vehicle);
       }
 
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
 
-      if (isEditMode) {
-        CustomSnackBar.showSuccess(context, 'Fordon uppdaterat');
-      } else {
-        CustomSnackBar.showSuccess(context, 'Fordon tillagt');
+      // Show appropriate success message
+      if (mounted) {
+        if (_nextBesiktningDate != null) {
+          // Date is set - notification scheduled (or permission requested)
+          final daysUntil = _nextBesiktningDate!
+              .difference(DateTime.now())
+              .inDays;
+
+          if (daysUntil >= 30) {
+            // Will get notification
+            CustomSnackBar.showSuccess(
+              context,
+              isEditMode
+                  ? 'Fordon uppdaterat! Påminnelse schemalagd 30 dagar innan besiktning.'
+                  : 'Fordon tillagt! Påminnelse schemalagd 30 dagar innan besiktning.',
+            );
+          } else if (daysUntil > 0) {
+            // Too soon for notification
+            CustomSnackBar.showInfo(
+              context,
+              isEditMode
+                  ? 'Fordon uppdaterat! Besiktningen är inom 30 dagar - ingen påminnelse schemalagd.'
+                  : 'Fordon tillagt! Besiktningen är inom 30 dagar - ingen påminnelse schemalagd.',
+            );
+          } else {
+            // Date in the past
+            CustomSnackBar.showInfo(
+              context,
+              isEditMode
+                  ? 'Fordon uppdaterat! Besiktningsdatumet har passerat.'
+                  : 'Fordon tillagt! Besiktningsdatumet har passerat.',
+            );
+          }
+        } else {
+          // No date set - regular message
+          CustomSnackBar.showSuccess(
+            context,
+            isEditMode ? 'Fordon uppdaterat' : 'Fordon tillagt',
+          );
+        }
       }
     }
   }
