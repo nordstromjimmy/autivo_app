@@ -62,7 +62,7 @@ class VehicleServiceTab extends ConsumerWidget {
     final hasMore = records.isNotEmpty;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       children: [
         // Records list header
         Row(

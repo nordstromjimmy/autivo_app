@@ -69,13 +69,11 @@ class NotificationService {
       if (granted == false) return false;
     }
 
-    // ✅ NEW: Request exact alarm permission (Android 12+)
+    // Request exact alarm permission (Android 12+)
     if (await _isAndroid12OrHigher()) {
       final status = await Permission.scheduleExactAlarm.request();
-      print('📅 Exact alarm permission: $status');
 
       if (!status.isGranted) {
-        print('⚠️ Exact alarm permission denied! Notifications may not work.');
         // On some Android versions, we need to open settings
         await openAppSettings();
       }
@@ -100,20 +98,9 @@ class NotificationService {
     required NotificationType type,
     String? payload,
   }) async {
-    print('🔔 Scheduling notification:');
-    print('   ID: $id');
-    print('   Title: $title');
-    print('   Scheduled for: $scheduledDate');
-    print('   Current time: ${DateTime.now()}');
-
-    // ✅ FIX: Create TZ datetime properly (don't use .from())
+    // Create TZ datetime properly (don't use .from())
     final location = tz.getLocation('Europe/Stockholm');
     final tzDateTime = tz.TZDateTime.from(scheduledDate, location);
-
-    print('   TZ DateTime: $tzDateTime');
-    print(
-      '   Time until notification: ${tzDateTime.difference(tz.TZDateTime.now(location))}',
-    );
 
     await _notifications.zonedSchedule(
       id,
@@ -126,8 +113,6 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
-
-    print('✅ Notification scheduled successfully!');
   }
 
   /// Cancel a notification
@@ -147,14 +132,12 @@ class NotificationService {
 
   /// Handle notification tap (foreground)
   void _onNotificationTapped(NotificationResponse response) {
-    print('✅ Notification tapped: ${response.payload}');
     // TODO: Handle navigation based on payload
   }
 
   /// Handle notification tap (background)
   @pragma('vm:entry-point')
   static void _onBackgroundNotificationTapped(NotificationResponse response) {
-    print('✅ Background notification tapped: ${response.payload}');
     // TODO: Handle navigation based on payload
   }
 

@@ -179,41 +179,6 @@ class DebugScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.list, color: Colors.purple),
             title: const Text('View Pending Notifications'),
-            onTap: () async {
-              final service = NotificationService();
-              final pending = await service.getPending();
-
-              if (context.mounted) {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('Pending: ${pending.length}'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: pending
-                            .map(
-                              (n) =>
-                                  Text('ID: ${n.id}\n${n.title}\n${n.body}\n'),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.list, color: Colors.purple),
-            title: const Text('View Pending Notifications'),
             subtitle: const Text('See all scheduled notifications'),
             onTap: () async {
               final service = NotificationService();
@@ -247,41 +212,6 @@ class DebugScreen extends ConsumerWidget {
                       TextButton(
                         onPressed: () => Navigator.pop(context),
                         child: const Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings, color: Colors.orange),
-            title: const Text('Check Notification Permissions'),
-            subtitle: const Text('Request and check permissions'),
-            onTap: () async {
-              final service = NotificationService();
-              await service.initialize();
-
-              final granted = await service.requestPermissions();
-
-              if (context.mounted) {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(
-                      granted
-                          ? '✅ Permissions Granted'
-                          : '❌ Permissions Denied',
-                    ),
-                    content: Text(
-                      granted
-                          ? 'Notifications are enabled and should work!'
-                          : 'Please enable notifications in system settings.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'),
                       ),
                     ],
                   ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/media/pdf_export_helper.dart';
+import '../../premium/providers/combined_premium_provider.dart';
+import '../../premium/providers/purchase_provider.dart';
 import '../models/vehicle.dart';
 import '../providers/vehicle_provider.dart';
 import '../../../shared/screens/tabs/vehicle_besiktning_tab.dart';
@@ -69,14 +71,26 @@ class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            tooltip: 'Exportera rapport',
-            onPressed: () {
-              PdfExportHelper.exportVehiclePDF(
-                context: context,
-                ref: ref,
-                vehicle: vehicle,
+          Consumer(
+            builder: (context, ref, child) {
+              final premiumStatus = ref.watch(premiumStatusProvider);
+              final supabaseStatus = ref.watch(supabasePremiumStatusProvider);
+
+              final isLoading =
+                  premiumStatus.isLoading || supabaseStatus.isLoading;
+
+              return IconButton(
+                icon: const Icon(Icons.picture_as_pdf),
+                tooltip: isLoading ? 'Laddar...' : 'Exportera rapport',
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        PdfExportHelper.exportVehiclePDF(
+                          context: context,
+                          ref: ref,
+                          vehicle: vehicle,
+                        );
+                      },
               );
             },
           ),

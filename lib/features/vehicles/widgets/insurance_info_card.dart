@@ -13,7 +13,6 @@ class InsuranceInfoCard extends StatelessWidget {
     final hasInsurance = vehicle.insuranceCompany != null;
 
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           Navigator.push(

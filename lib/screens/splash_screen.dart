@@ -72,7 +72,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        color: Color(0xFF0e8afd),
+        /*         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
               const Color(0xFF0e8afd), // Blue
@@ -81,7 +82,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-        ),
+        ), */
         // Add SafeArea to avoid notch/status bar issues
         child: SafeArea(
           child: Center(
@@ -103,7 +104,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           maxHeight: isTablet ? 300 : 200,
                         ),
                         child: Image.asset(
-                          'assets/images/logo2.png',
+                          'assets/images/logo3.png',
                           fit: BoxFit.contain,
                         ),
                       ),

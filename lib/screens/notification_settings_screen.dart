@@ -284,7 +284,7 @@ class _NotificationSettingsScreenState
                     return Card(
                       child: ListTile(
                         title: Text(notif.title ?? 'Notifikation'),
-                        subtitle: Text(notif.body ?? ''),
+                        //subtitle: Text(notif.body ?? ''),
                         trailing: Text('ID: ${notif.id}'),
                       ),
                     );

@@ -62,7 +62,7 @@ class VehicleReceiptsTab extends ConsumerWidget {
     final hasMore = receipts.length > 1;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       children: [
         // Header
         Row(

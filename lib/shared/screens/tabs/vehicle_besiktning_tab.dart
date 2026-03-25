@@ -16,7 +16,7 @@ class VehicleBesiktningTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(6),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

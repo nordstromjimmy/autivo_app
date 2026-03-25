@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../features/premium/providers/purchase_provider.dart';
 import '../../../features/vehicles/models/vehicle.dart';
 import '../../../features/maintenance/providers/maintenance_provider.dart';
 import '../../../features/receipts/providers/receipt_provider.dart';
 import '../../../features/premium/utils/feature_checker.dart';
 import '../../../features/premium/utils/feature_gates.dart';
 import '../../../features/premium/screens/paywall_screen.dart';
+import '../../../features/premium/providers/combined_premium_provider.dart';
 import '../../../core/utils/helpers/custom_snackbar.dart';
 import '../../../shared/widgets/pdf_preview_screen.dart';
 
@@ -16,9 +18,37 @@ class PdfExportHelper {
     required WidgetRef ref,
     required Vehicle vehicle,
   }) async {
-    // Check if user can export PDF
-    final checker = ref.read(featureCheckerProvider);
+    // Check if premium status is still loading
+    final premiumStatus = ref.read(premiumStatusProvider);
+    final supabaseStatus = ref.read(supabasePremiumStatusProvider);
 
+    final isLoading = premiumStatus.isLoading || supabaseStatus.isLoading;
+
+    if (isLoading) {
+      // Show loading dialog
+      _showLoadingDialog(context);
+
+      // Wait for both to load
+      await premiumStatus.when(
+        data: (_) => Future.value(),
+        loading: () => Future.delayed(const Duration(milliseconds: 500)),
+        error: (_, __) => Future.value(),
+      );
+
+      await supabaseStatus.when(
+        data: (_) => Future.value(),
+        loading: () => Future.delayed(const Duration(milliseconds: 500)),
+        error: (_, __) => Future.value(),
+      );
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+    }
+
+    // Now check premium status
+    final checker = ref.read(featureCheckerProvider);
     final canExportPDF = checker.canUse(AppFeature.exportMaintenancePDF);
 
     if (!canExportPDF) {
@@ -28,6 +58,29 @@ class PdfExportHelper {
 
     // User has premium - proceed with export
     await _performExport(context, ref, vehicle);
+  }
+
+  /// Show loading dialog
+  static void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Kontrollerar premium-status...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// Show premium required dialog
@@ -105,7 +158,7 @@ class PdfExportHelper {
       return;
     }
 
-    // ✅ Navigate to preview screen instead of generating immediately
+    // Navigate to preview screen
     if (context.mounted) {
       Navigator.push(
         context,

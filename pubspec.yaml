@@ -34,42 +34,65 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  # STATE MANAGEMENT
   flutter_riverpod: ^2.4.0
+
+  # LOCAL STORAGE & DATABASE
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  intl: ^0.20.2
-  flutter_svg: ^2.0.9
-  uuid: ^4.3.3
-  url_launcher: ^6.3.1
-  pdf: ^3.10.0
-  printing: ^5.11.0
-  path_provider: ^2.1.0
-  supabase_flutter: ^2.5.0
+
+  # BACKEND & SYNC
   flutter_dotenv: ^5.1.0
-  image_picker: ^1.0.7
-  google_mlkit_text_recognition: ^0.15.1
-  path: ^1.9.0
-  package_info_plus: ^8.1.2
+  supabase_flutter: ^2.5.0
+
+  # FILE & IMAGE HANDLING
   flutter_image_compress: ^2.1.0
   image: ^4.1.0
+  image_picker: ^1.0.7
+  path: ^1.9.0
+  path_provider: ^2.1.0
+
+  # PDF & PRINTING
+  pdf: ^3.10.0
+  printing: ^5.11.0
+
+  # NOTIFICATIONS
   flutter_local_notifications: ^18.0.1
-  timezone: ^0.9.4
   permission_handler: ^11.0.0
+  timezone: ^0.9.4
+
+  # IN-APP PURCHASES
+  purchases_flutter: ^9.12.3
+  purchases_ui_flutter: ^9.12.3
+
+  # ML & OCR
+  google_mlkit_text_recognition: ^0.15.1
+
+  # UI & ICONS
+  flutter_svg: ^2.0.9
+
+  # UTILITIES
+  intl: ^0.20.2
+  package_info_plus: ^8.1.2
+  url_launcher: ^6.3.1
+  uuid: ^4.3.3
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  purchases_flutter: ^9.12.3
-  purchases_ui_flutter: ^9.12.3
 
 dev_dependencies:
+  # TESTING
   flutter_test:
     sdk: flutter
 
-  hive_generator: ^2.0.1
+  # CODE GENERATION
   build_runner: ^2.4.8
-  flutter_native_splash: ^2.3.10
+  hive_generator: ^2.0.1
+
+  # APP ASSETS
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.10
 
   # flutter_local_notifications: ^17.0.0
   # timezone: ^0.9.2
@@ -107,6 +130,7 @@ flutter:
     - .env
     - assets/images/logo.png
     - assets/images/logo2.png
+    - assets/images/logo3.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
