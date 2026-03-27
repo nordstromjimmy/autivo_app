@@ -37,15 +37,39 @@ class PdfExportService {
       ),
     );
 
-    // Page 2: Summary & Statistics
+    // Page 2: Content Page
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        build: (context) => _buildSummaryPage(vehicle, records),
+        build: (context) => pw.Column(
+          children: [
+            pw.Expanded(
+              child: _buildTableOfContents(
+                vehicle,
+                records.length,
+                receipts?.length ?? 0,
+              ),
+            ),
+            _buildPageFooter(context),
+          ],
+        ),
       ),
     );
 
-    // Page 3+: Maintenance History
+    // Page 3: Summary & Statistics
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => pw.Column(
+          children: [
+            pw.Expanded(child: _buildSummaryPage(vehicle, records)),
+            _buildPageFooter(context),
+          ],
+        ),
+      ),
+    );
+
+    // Page 4+: Maintenance History
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -54,7 +78,7 @@ class PdfExportService {
       ),
     );
 
-    // Page 4+: Receipts Gallery (if receipts exist)
+    // Page 5+: Receipts Gallery (if receipts exist)
     if (receipts != null && receipts.isNotEmpty) {
       final receiptImages = await _loadAllReceiptImages(receipts);
 
@@ -62,7 +86,12 @@ class PdfExportService {
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
-          build: (context) => _buildReceiptsSectionHeader(receipts.length),
+          build: (context) => pw.Column(
+            children: [
+              pw.Expanded(child: _buildReceiptsSectionHeader(receipts.length)),
+              _buildPageFooter(context),
+            ],
+          ),
         ),
       );
 
@@ -73,6 +102,7 @@ class PdfExportService {
           pdf.addPage(
             pw.Page(
               pageFormat: PdfPageFormat.a4,
+              margin: pw.EdgeInsets.zero, // Remove page margins
               build: (context) => _buildReceiptPage(receipt, imageProvider),
             ),
           );
@@ -193,6 +223,105 @@ class PdfExportService {
             pw.SizedBox(height: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  // ==================== CONTENT TABLE PAGE ====================
+  static pw.Widget _buildTableOfContents(
+    Vehicle vehicle,
+    int recordCount,
+    int receiptCount,
+  ) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(40),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Innehåll',
+            style: pw.TextStyle(
+              fontSize: 36,
+              fontWeight: pw.FontWeight.bold,
+              color: primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Container(height: 3, width: 60, color: primaryColor),
+          pw.SizedBox(height: 40),
+
+          _buildTocItem('1', 'Översikt', 'Fordonsinformation och statistik'),
+          _buildTocItem(
+            '2',
+            'Servicehistorik',
+            '$recordCount underhållsposter',
+          ),
+          if (receiptCount > 0)
+            _buildTocItem('3', 'Kvitton', '$receiptCount bilagor'),
+
+          pw.Spacer(),
+
+          pw.Container(
+            padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.blue50,
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Text(
+              'Detta är en officiell servicehistorik för ${vehicle.registrationNumber}. Dokumentet kan användas vid försäljning eller försäkringsärenden.',
+              style: pw.TextStyle(fontSize: 11, color: secondaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildTocItem(String number, String title, String subtitle) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 24),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 40,
+            height: 40,
+            decoration: pw.BoxDecoration(
+              color: primaryColor,
+              shape: pw.BoxShape.circle,
+            ),
+            child: pw.Center(
+              child: pw.Text(
+                number,
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white,
+                ),
+              ),
+            ),
+          ),
+          pw.SizedBox(width: 16),
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  title,
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  subtitle,
+                  style: pw.TextStyle(fontSize: 12, color: secondaryColor),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -332,20 +461,24 @@ class PdfExportService {
 
           // Placeholder for future chart
           pw.Container(
-            height: 150,
+            padding: const pw.EdgeInsets.all(16),
             decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.grey300, width: 2),
+              border: pw.Border.all(color: PdfColors.grey300, width: 1),
               borderRadius: pw.BorderRadius.circular(8),
             ),
-            child: pw.Center(
-              child: pw.Text(
-                'Kostnadsöversikt - Funktion kommer snart',
-                style: pw.TextStyle(
-                  fontSize: 14,
-                  color: secondaryColor,
-                  fontStyle: pw.FontStyle.italic,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Kostnadsöversikt per år',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
-              ),
+                pw.SizedBox(height: 16),
+                _buildSimpleCostChart(records),
+              ],
             ),
           ),
         ],
@@ -500,6 +633,93 @@ class PdfExportService {
     );
   }
 
+  static pw.Widget _buildSimpleCostChart(List<MaintenanceRecord> records) {
+    // Group by year and calculate costs
+    final yearCosts = <int, double>{};
+    for (var record in records) {
+      if (record.cost != null) {
+        yearCosts[record.date.year] =
+            (yearCosts[record.date.year] ?? 0) + record.cost!;
+      }
+    }
+
+    if (yearCosts.isEmpty) {
+      return pw.Center(
+        child: pw.Text(
+          'Ingen kostnadsdata tillgänglig',
+          style: pw.TextStyle(fontSize: 12, color: secondaryColor),
+        ),
+      );
+    }
+
+    final sortedYears = yearCosts.keys.toList()..sort();
+    final maxCost = yearCosts.values.reduce((a, b) => a > b ? a : b);
+
+    return pw.Column(
+      children: sortedYears.map((year) {
+        final cost = yearCosts[year]!;
+        final percentage = cost / maxCost;
+
+        return pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 8),
+          child: pw.Row(
+            children: [
+              pw.SizedBox(
+                width: 50,
+                child: pw.Text(
+                  '$year',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.Expanded(
+                child: pw.Stack(
+                  children: [
+                    pw.Container(
+                      height: 24,
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey200,
+                        borderRadius: pw.BorderRadius.circular(4),
+                      ),
+                    ),
+                    pw.Container(
+                      height: 24,
+                      width: percentage * 400, // max bar width
+                      decoration: pw.BoxDecoration(
+                        gradient: pw.LinearGradient(
+                          colors: [primaryColor, accentBlue],
+                        ),
+                        borderRadius: pw.BorderRadius.circular(4),
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      child: pw.Text(
+                        '${cost.toStringAsFixed(0)} kr',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: percentage > 0.3
+                              ? PdfColors.white
+                              : secondaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   // ==================== RECEIPTS SECTION ====================
   /// Build receipts section (synchronous - images already loaded)
   /// Build a full A4 page for one receipt
@@ -604,15 +824,12 @@ class PdfExportService {
         pw.Expanded(
           child: pw.Container(
             color: PdfColors.grey200,
-            padding: const pw.EdgeInsets.all(20),
+            padding: const pw.EdgeInsets.all(4),
             child: pw.Center(
-              child: pw.Container(
-                child: pw.Image(
-                  image,
-                  fit: pw
-                      .BoxFit
-                      .contain, // Show full image, maintain aspect ratio
-                ),
+              child: pw.Image(
+                image,
+                fit:
+                    pw.BoxFit.contain, // Show full image, maintain aspect ratio
               ),
             ),
           ),
@@ -806,16 +1023,42 @@ class PdfExportService {
 
   static pw.Widget _buildPageFooter(pw.Context context) {
     return pw.Container(
-      padding: const pw.EdgeInsets.only(top: 10),
+      padding: const pw.EdgeInsets.only(top: 10, bottom: 10),
       decoration: const pw.BoxDecoration(
         border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300)),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
-            'Genererad med Autivo',
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+          pw.Row(
+            children: [
+              pw.Container(
+                width: 20,
+                height: 20,
+                decoration: pw.BoxDecoration(
+                  color: primaryColor,
+                  shape: pw.BoxShape.circle,
+                ),
+                child: pw.Center(
+                  child: pw.Text(
+                    'A',
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                ),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Text(
+                'Autivo Servicehistorik',
+                style: const pw.TextStyle(
+                  fontSize: 10,
+                  color: PdfColors.grey600,
+                ),
+              ),
+            ],
           ),
           pw.Text(
             'Sida ${context.pageNumber} av ${context.pagesCount}',
