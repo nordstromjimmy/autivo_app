@@ -69,13 +69,13 @@ class NotificationService {
       if (granted == false) return false;
     }
 
-    // Request exact alarm permission (Android 12+)
+    // Check permission instead of requesting + opening settings
     if (await _isAndroid12OrHigher()) {
-      final status = await Permission.scheduleExactAlarm.request();
+      final status = await Permission.scheduleExactAlarm.status;
 
+      // If not granted, just return false (don't open settings automatically)
       if (!status.isGranted) {
-        // On some Android versions, we need to open settings
-        await openAppSettings();
+        return false; //
       }
     }
 

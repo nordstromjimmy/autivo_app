@@ -158,46 +158,12 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
         Navigator.pop(context);
       }
 
-      // Show appropriate success message
+      // Show success message
       if (mounted) {
-        if (_nextBesiktningDate != null) {
-          // Date is set - notification scheduled (or permission requested)
-          final daysUntil = _nextBesiktningDate!
-              .difference(DateTime.now())
-              .inDays;
-
-          if (daysUntil >= 30) {
-            // Will get notification
-            CustomSnackBar.showSuccess(
-              context,
-              isEditMode
-                  ? 'Fordon uppdaterat! Påminnelse schemalagd 30 dagar innan besiktning.'
-                  : 'Fordon tillagt! Påminnelse schemalagd 30 dagar innan besiktning.',
-            );
-          } else if (daysUntil > 0) {
-            // Too soon for notification
-            CustomSnackBar.showInfo(
-              context,
-              isEditMode
-                  ? 'Fordon uppdaterat! Besiktningen är inom 30 dagar - ingen påminnelse schemalagd.'
-                  : 'Fordon tillagt! Besiktningen är inom 30 dagar - ingen påminnelse schemalagd.',
-            );
-          } else {
-            // Date in the past
-            CustomSnackBar.showInfo(
-              context,
-              isEditMode
-                  ? 'Fordon uppdaterat! Besiktningsdatumet har passerat.'
-                  : 'Fordon tillagt! Besiktningsdatumet har passerat.',
-            );
-          }
-        } else {
-          // No date set - regular message
-          CustomSnackBar.showSuccess(
-            context,
-            isEditMode ? 'Fordon uppdaterat' : 'Fordon tillagt',
-          );
-        }
+        CustomSnackBar.showSuccess(
+          context,
+          isEditMode ? 'Fordon uppdaterat' : 'Fordon tillagt',
+        );
       }
     }
   }

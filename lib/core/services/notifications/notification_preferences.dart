@@ -37,12 +37,8 @@ class NotificationPreferences {
         return 30; // Changed from 14 to 30
       case NotificationType.serviceReminder:
         return 30; // Changed from 7 to 30
-      case NotificationType.insuranceRenewal:
-        return 30; // Already 30
       case NotificationType.maintenanceDue:
         return 30; // Changed from 7 to 30
-      case NotificationType.fuelReminder:
-        return 30; // Changed from 1 to 30
     }
   }
 }

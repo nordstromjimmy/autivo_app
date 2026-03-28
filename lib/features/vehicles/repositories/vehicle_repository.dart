@@ -59,6 +59,11 @@ class VehicleRepository {
 
   /// Update existing vehicle
   Future<void> update(Vehicle vehicle) async {
+    // Get old vehicle to compare inspection date
+    final oldVehicle = getById(vehicle.id);
+    final oldInspectionDate = oldVehicle?.nextBesiktningDate;
+    final newInspectionDate = vehicle.nextBesiktningDate;
+
     // Mark for sync
     vehicle.markForSync();
 
@@ -70,12 +75,25 @@ class VehicleRepository {
       await _trySyncVehicle(vehicle);
     }
 
-    // Schedule notifications if scheduler is available
+    // Only handle notifications if inspection date CHANGED
     if (_notificationScheduler != null) {
-      // Request permissions first time (if needed)
-      await _ensureNotificationPermissions();
+      // Check if inspection date changed
+      final dateChanged = oldInspectionDate != newInspectionDate;
 
-      await _scheduleNotifications(vehicle);
+      if (dateChanged) {
+        // Date changed - handle scheduling/canceling
+        if (newInspectionDate != null) {
+          // New date added or date updated - request permissions and schedule
+          final permissionGranted = await _ensureNotificationPermissions();
+          if (permissionGranted) {
+            await _scheduleNotifications(vehicle);
+          }
+        } else {
+          // Date removed - cancel notification
+          await _notificationScheduler!.cancelInspectionReminder(vehicle.id);
+        }
+      }
+      // If date didn't change - do NOTHING (already scheduled from before)
     }
   }
 
@@ -223,7 +241,7 @@ class VehicleRepository {
   }
 
   /// Ensure notification permissions are granted
-  Future<void> _ensureNotificationPermissions() async {
+  Future<bool> _ensureNotificationPermissions() async {
     final service = NotificationService();
     await service.initialize();
 
@@ -234,42 +252,26 @@ class VehicleRepository {
       await preferences.setEnabled(NotificationType.inspectionReminder, true);
 
       _onNotificationEnabled?.call('Besiktningspåminnelser aktiverade!');
+
+      return true;
     } else {
-      print('⚠️ Notification permissions denied');
+      return false;
     }
   }
 
+  /// Schedule notifications if scheduler is available
   Future<void> _scheduleNotifications(Vehicle vehicle) async {
     if (_notificationScheduler == null) return;
 
-    // Only request permissions if we actually have dates to schedule
-    final hasInspection = vehicle.nextBesiktningDate != null;
-    final hasInsurance = vehicle.insuranceRenewalDate != null;
-
-    if (!hasInspection && !hasInsurance) {
-      return; // No dates set, no need for permissions
-    }
-
-    // Request permissions only when needed
-    await _ensureNotificationPermissions();
+    // Simplified - permission already checked in update()
+    if (vehicle.nextBesiktningDate == null) return;
 
     // Schedule inspection reminder
-    if (vehicle.nextBesiktningDate != null) {
-      await _notificationScheduler.scheduleInspectionReminder(
-        vehicleId: vehicle.id,
-        vehicleRegNumber: vehicle.registrationNumber,
-        inspectionDate: vehicle.nextBesiktningDate!,
-      );
-    }
-
-    // Schedule insurance renewal reminder
-    if (vehicle.insuranceRenewalDate != null) {
-      await _notificationScheduler.scheduleInsuranceRenewal(
-        vehicleId: vehicle.id,
-        vehicleRegNumber: vehicle.registrationNumber,
-        renewalDate: vehicle.insuranceRenewalDate!,
-      );
-    }
+    await _notificationScheduler!.scheduleInspectionReminder(
+      vehicleId: vehicle.id,
+      vehicleRegNumber: vehicle.registrationNumber,
+      inspectionDate: vehicle.nextBesiktningDate!,
+    );
   }
 
   /// Convert Supabase map to Vehicle object

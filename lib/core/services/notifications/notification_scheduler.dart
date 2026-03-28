@@ -55,39 +55,6 @@ class NotificationScheduler {
     await _service.cancel(id);
   }
 
-  /// Schedule insurance renewal reminder
-  Future<void> scheduleInsuranceRenewal({
-    required String vehicleId,
-    required String vehicleRegNumber,
-    required DateTime renewalDate,
-  }) async {
-    if (!await _preferences.isEnabled(NotificationType.insuranceRenewal)) {
-      return;
-    }
-
-    final daysBefore = await _preferences.getDaysBefore(
-      NotificationType.insuranceRenewal,
-    );
-
-    final notificationDate = renewalDate.subtract(Duration(days: daysBefore));
-
-    if (notificationDate.isBefore(DateTime.now())) return;
-
-    final notificationId = _getNotificationId(
-      NotificationType.insuranceRenewal,
-      vehicleId,
-    );
-
-    await _service.schedule(
-      id: notificationId,
-      title: 'Försäkring förnyelse för $vehicleRegNumber',
-      body: 'Din försäkring förfaller om $daysBefore dagar',
-      scheduledDate: notificationDate,
-      type: NotificationType.insuranceRenewal,
-      payload: 'vehicle:$vehicleId:insurance',
-    );
-  }
-
   /// Reschedule all notifications for a vehicle
   Future<void> rescheduleForVehicle(
     String vehicleId,
@@ -104,14 +71,6 @@ class NotificationScheduler {
         vehicleId: vehicleId,
         vehicleRegNumber: regNumber,
         inspectionDate: inspectionDate,
-      );
-    }
-
-    if (insuranceRenewal != null) {
-      await scheduleInsuranceRenewal(
-        vehicleId: vehicleId,
-        vehicleRegNumber: regNumber,
-        renewalDate: insuranceRenewal,
       );
     }
   }

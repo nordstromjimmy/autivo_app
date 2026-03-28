@@ -1,11 +1,5 @@
 /// Notification type definitions
-enum NotificationType {
-  inspectionReminder,
-  serviceReminder,
-  insuranceRenewal,
-  maintenanceDue,
-  fuelReminder,
-}
+enum NotificationType { inspectionReminder, serviceReminder, maintenanceDue }
 
 extension NotificationTypeExtension on NotificationType {
   /// Channel ID for Android
@@ -15,12 +9,9 @@ extension NotificationTypeExtension on NotificationType {
         return 'inspection_reminders';
       case NotificationType.serviceReminder:
         return 'service_reminders';
-      case NotificationType.insuranceRenewal:
-        return 'insurance_renewals';
+
       case NotificationType.maintenanceDue:
         return 'maintenance_due';
-      case NotificationType.fuelReminder:
-        return 'fuel_reminders';
     }
   }
 
@@ -31,12 +22,9 @@ extension NotificationTypeExtension on NotificationType {
         return 'Besiktningspåminnelser';
       case NotificationType.serviceReminder:
         return 'Servicepåminnelser';
-      case NotificationType.insuranceRenewal:
-        return 'Försäkringsförnyelse';
+
       case NotificationType.maintenanceDue:
         return 'Underhåll förfaller';
-      case NotificationType.fuelReminder:
-        return 'Bränslepåminnelser';
     }
   }
 
@@ -47,12 +35,9 @@ extension NotificationTypeExtension on NotificationType {
         return 'Påminnelser om kommande besiktningar';
       case NotificationType.serviceReminder:
         return 'Påminnelser om servicetillfällen';
-      case NotificationType.insuranceRenewal:
-        return 'Påminnelser om försäkringsförnyelse';
+
       case NotificationType.maintenanceDue:
         return 'Påminnelser när underhåll förfaller';
-      case NotificationType.fuelReminder:
-        return 'Påminnelser om bränslepåfyllning';
     }
   }
 
@@ -63,12 +48,9 @@ extension NotificationTypeExtension on NotificationType {
         return true; // Important, enable by default
       case NotificationType.serviceReminder:
         return true;
-      case NotificationType.insuranceRenewal:
-        return true;
+
       case NotificationType.maintenanceDue:
         return false; // Less critical
-      case NotificationType.fuelReminder:
-        return false;
     }
   }
 
@@ -79,12 +61,9 @@ extension NotificationTypeExtension on NotificationType {
         return '🔍';
       case NotificationType.serviceReminder:
         return '🔧';
-      case NotificationType.insuranceRenewal:
-        return '🛡️';
+
       case NotificationType.maintenanceDue:
         return '⏰';
-      case NotificationType.fuelReminder:
-        return '⛽';
     }
   }
 }

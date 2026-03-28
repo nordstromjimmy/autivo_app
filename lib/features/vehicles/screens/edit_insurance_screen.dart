@@ -238,6 +238,8 @@ class _EditInsuranceScreenState extends ConsumerState<EditInsuranceScreen> {
 
     await ref.read(vehicleRepositoryProvider).update(updatedVehicle);
 
+    //  Invalidate BOTH providers
+    ref.invalidate(vehiclesNotifierProvider);
     ref.invalidate(vehiclesProvider);
 
     if (mounted) {
@@ -271,6 +273,8 @@ class _EditInsuranceScreenState extends ConsumerState<EditInsuranceScreen> {
     if (confirmed == true) {
       await ref.read(vehicleRepositoryProvider).clearInsurance(widget.vehicle);
 
+      // Invalidate BOTH providers
+      ref.invalidate(vehiclesNotifierProvider);
       ref.invalidate(vehiclesProvider);
 
       if (mounted) {

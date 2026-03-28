@@ -252,14 +252,11 @@ class _NotificationSettingsScreenState
     switch (type) {
       case NotificationType.inspectionReminder:
         return 'besiktning';
-      case NotificationType.insuranceRenewal:
-        return 'försäkringsförnyelse';
+
       case NotificationType.serviceReminder:
         return 'service';
       case NotificationType.maintenanceDue:
         return 'underhåll förfaller';
-      case NotificationType.fuelReminder:
-        return 'bränslepåfyllning';
     }
   }
 
