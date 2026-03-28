@@ -3,6 +3,8 @@ import 'package:mina_fordon/core/services/notifications/notification_scheduler.d
 import '../../../core/services/notifications/notification_preferences.dart';
 import '../../../core/services/notifications/notification_service.dart';
 import '../../../core/services/notifications/notification_types.dart';
+import '../../maintenance/repositories/maintenance_repository.dart';
+import '../../receipts/repositories/receipt_repository.dart';
 import '../models/vehicle.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../core/services/sync/sync_service.dart';
@@ -97,7 +99,7 @@ class VehicleRepository {
     }
   }
 
-  /// Delete vehicle
+  /// Delete vehicle and ALL related data (cascade delete)
   Future<bool> delete(String vehicleId) async {
     final vehicle = getById(vehicleId);
     if (vehicle == null) return false;
@@ -107,20 +109,34 @@ class VehicleRepository {
       return false;
     }
 
-    // Cancel notifications before deleting
-    if (_notificationScheduler != null) {
-      await _notificationScheduler.cancelInspectionReminder(vehicleId);
+    try {
+      // Step 1: Cancel notifications
+      if (_notificationScheduler != null) {
+        await _notificationScheduler.cancelInspectionReminder(vehicleId);
+      }
+
+      // Step 2: Delete all receipts (includes images from storage)
+      final receiptRepo = ReceiptRepository();
+      await receiptRepo.deleteByVehicleId(vehicleId);
+
+      // Step 3: Delete all maintenance records
+      final maintenanceRepo = MaintenanceRepository();
+      await maintenanceRepo.deleteByVehicleId(vehicleId);
+
+      // Step 4: Delete vehicle from cloud
+      if (SupabaseConfig.isSignedIn && vehicle.supabaseId != null) {
+        await _syncService.deleteVehicle(vehicleId);
+      }
+
+      // Step 5: Delete vehicle from local storage
+      await _box.delete(vehicleId);
+
+      return true;
+    } catch (e, stackTrace) {
+      print('❌ Error during cascade delete: $e');
+      print('Stack trace: $stackTrace');
+      return false;
     }
-
-    // Delete normally
-    await _box.delete(vehicleId);
-
-    // Delete from cloud if online
-    if (SupabaseConfig.isSignedIn && vehicle.supabaseId != null) {
-      await _syncService.deleteVehicle(vehicleId);
-    }
-
-    return true;
   }
 
   // ==================== SYNC OPERATIONS ====================

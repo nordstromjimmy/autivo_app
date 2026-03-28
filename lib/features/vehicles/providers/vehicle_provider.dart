@@ -77,12 +77,12 @@ final vehicleNeedsSyncProvider = Provider.family<bool, String>((
   ref,
   vehicleId,
 ) {
-  // Check vehicle itself
+  // Handle case where vehicle is deleted
   final vehicles = ref.watch(vehiclesProvider);
-  final vehicle = vehicles.firstWhere(
-    (v) => v.id == vehicleId,
-    orElse: () => throw Exception('Vehicle not found: $vehicleId'),
-  );
+  final vehicle = vehicles.where((v) => v.id == vehicleId).firstOrNull;
+
+  // If vehicle doesn't exist, return false (no sync needed)
+  if (vehicle == null) return false;
 
   if (vehicle.needsSync) return true;
 
@@ -101,11 +101,18 @@ final vehicleNeedsSyncProvider = Provider.family<bool, String>((
 /// Get aggregate sync status for a vehicle (vehicle + maintenance + receipts)
 final vehicleAggregateSyncStatusProvider =
     Provider.family<VehicleAggregateSync, String>((ref, vehicleId) {
+      // Handle case where vehicle is deleted
       final vehicles = ref.watch(vehiclesProvider);
-      final vehicle = vehicles.firstWhere(
-        (v) => v.id == vehicleId,
-        orElse: () => throw Exception('Vehicle not found: $vehicleId'),
-      );
+      final vehicle = vehicles.where((v) => v.id == vehicleId).firstOrNull;
+
+      // If vehicle doesn't exist, return default "not found" state
+      if (vehicle == null) {
+        return VehicleAggregateSync(
+          isSynced: false,
+          needsSync: false,
+          hasCloudBackup: false,
+        );
+      }
 
       final needsSync = ref.watch(vehicleNeedsSyncProvider(vehicleId));
 

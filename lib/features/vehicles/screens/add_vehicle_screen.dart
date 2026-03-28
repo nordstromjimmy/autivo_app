@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../maintenance/providers/maintenance_provider.dart';
+import '../../receipts/providers/receipt_provider.dart';
 import '../models/vehicle.dart';
 import '../providers/vehicle_provider.dart';
 import '../../auth/providers/auth_provider.dart'; // ← ADD THIS IMPORT
@@ -168,8 +170,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     }
   }
 
-  // UPDATED: Block deletion of synced vehicles while offline
-  void _deleteVehicle() async {
+  Future<void> _deleteVehicle() async {
     final vehicle = widget.existingVehicle!;
     final isSignedIn = ref.read(isSignedInProvider);
 
@@ -179,74 +180,218 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
         context,
         'Du måste vara inloggad för att ta bort synkade fordon',
       );
-      return; // Block deletion
+      return;
     }
 
-    // Show confirmation dialog
-    final confirm = await showDialog<bool>(
+    // Count related data
+    final maintenanceRecords = ref.read(maintenanceProvider(vehicle.id));
+    final receipts = ref.read(receiptsForVehicleProvider(vehicle.id));
+    final maintenanceCount = maintenanceRecords.length;
+    final receiptCount = receipts.length;
+
+    // Show detailed confirmation dialog
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Ta bort fordon?'),
-        content: const Text(
-          'Detta kommer ta bort fordonet och all dess servicehistorik. Du kan ångra inom 3 sekunder.',
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange[700]),
+            SizedBox(width: 8),
+            Expanded(child: Text('Ta bort fordon?')),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Detta kommer att radera:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(height: 16),
+              _buildDeleteItem(
+                Icons.directions_car,
+                'Fordon',
+                vehicle.registrationNumber,
+                Colors.blue,
+              ),
+              if (maintenanceCount > 0)
+                _buildDeleteItem(
+                  Icons.build,
+                  'Serviceposter',
+                  '$maintenanceCount st',
+                  Colors.orange,
+                ),
+              if (receiptCount > 0)
+                _buildDeleteItem(
+                  Icons.receipt_long,
+                  'Kvitton (inkl. bilder)',
+                  '$receiptCount st',
+                  Colors.green,
+                ),
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Denna åtgärd kan INTE ångras!',
+                        style: TextStyle(
+                          color: Colors.red[900],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Avbryt'),
+            child: Text('Avbryt'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Ta bort'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Radera allt'),
           ),
         ],
       ),
     );
 
-    if (confirm == true && mounted) {
-      // Delete the vehicle
-      final notifier = ref.read(vehiclesNotifierProvider.notifier);
-      final deleted = await notifier.deleteVehicle(vehicle.id);
+    if (confirmed != true) return;
 
-      // Check if deletion succeeded
-      if (!deleted && mounted) {
-        // Deletion was blocked (shouldn't happen since we check above, but safety check)
-        CustomSnackBar.showError(context, 'Kunde inte ta bort fordon');
-        return;
-      }
-
-      // Successfully deleted - pop screen
-      Navigator.of(context).pop();
-
-      // Show SnackBar with undo
-      ScaffoldMessenger.of(context).clearSnackBars();
-
-      final messenger = ScaffoldMessenger.of(context);
-      bool actionClicked = false;
-
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Fordon borttaget'),
-          action: SnackBarAction(
-            label: 'Ångra',
-            onPressed: () {
-              actionClicked = true;
-              // Re-add the vehicle
-              notifier.addVehicle(vehicle);
-              messenger.removeCurrentSnackBar();
-            },
+    // Show loading dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => PopScope(
+          canPop: false,
+          child: Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Raderar fordon och relaterad data...'),
+                    SizedBox(height: 8),
+                    Text(
+                      'Detta kan ta en stund',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       );
-
-      // Manually dismiss after 3 seconds if action wasn't clicked
-      Future.delayed(const Duration(seconds: 3), () {
-        if (!actionClicked) {
-          messenger.removeCurrentSnackBar();
-        }
-      });
     }
+
+    try {
+      // Delete vehicle (cascade delete)
+      final deleted = await ref
+          .read(vehiclesNotifierProvider.notifier)
+          .deleteVehicle(vehicle.id);
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      if (!deleted) {
+        // Deletion failed
+        if (mounted) {
+          CustomSnackBar.showError(context, 'Kunde inte radera fordon');
+        }
+        return;
+      }
+
+      // Pop edit screen first, THEN navigate home
+      if (mounted) {
+        // Pop the edit screen
+        Navigator.pop(context);
+
+        // Small delay to allow UI to settle
+        await Future.delayed(Duration(milliseconds: 100));
+
+        // Then navigate to home
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+
+          // Show success message
+          CustomSnackBar.showSuccess(
+            context,
+            'Fordon och all relaterad data raderad',
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        CustomSnackBar.showError(context, 'Fel vid radering: ${e.toString()}');
+      }
+    }
+  }
+
+  Widget _buildDeleteItem(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.close, color: Colors.red, size: 20),
+        ],
+      ),
+    );
   }
 
   @override
