@@ -1,19 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vehicle.dart';
+import '../providers/vehicle_provider.dart';
 import '../screens/add_vehicle_screen.dart';
 import '../screens/vehicle_details_screen.dart';
 import '../../../shared/widgets/sync_status_indicator.dart';
 
-class VehicleCard extends StatelessWidget {
+class VehicleCard extends ConsumerWidget {
   final Vehicle vehicle;
 
-  const VehicleCard({super.key, required this.vehicle});
+  const VehicleCard({required this.vehicle, super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final daysUntil = vehicle.daysUntilBesiktning;
-    final urgencyColor = _getUrgencyColor(vehicle.urgencyLevel);
-    final hasInspectionDate = vehicle.nextBesiktningDate != null;
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get reactive vehicle
+    final currentVehicle = ref
+        .watch(vehiclesProvider)
+        .firstWhere((v) => v.id == vehicle.id, orElse: () => vehicle);
+
+    final aggregateSync = ref.watch(
+      vehicleAggregateSyncStatusProvider(currentVehicle.id),
+    );
+
+    // Use currentVehicle (reactive) instead of vehicle (static)
+    final daysUntil = currentVehicle.daysUntilBesiktning;
+    final urgencyColor = _getUrgencyColor(currentVehicle.urgencyLevel);
+    final hasInspectionDate = currentVehicle.nextBesiktningDate != null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -23,7 +35,8 @@ class VehicleCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddVehicleScreen(existingVehicle: vehicle),
+              builder: (context) =>
+                  AddVehicleScreen(existingVehicle: currentVehicle),
             ),
           );
         },
@@ -31,7 +44,8 @@ class VehicleCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => VehicleDetailsScreen(vehicleId: vehicle.id),
+              builder: (context) =>
+                  VehicleDetailsScreen(vehicleId: currentVehicle.id),
             ),
           );
         },
@@ -48,19 +62,19 @@ class VehicleCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          vehicle.registrationNumber,
+                          currentVehicle.registrationNumber,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(height: 8),
                         SyncStatusBadge(
-                          isSynced: vehicle.isSynced,
-                          needsSync: vehicle.needsSync,
-                          hasCloudBackup: vehicle.hasCloudBackup,
+                          isSynced: aggregateSync.isSynced,
+                          needsSync: aggregateSync.needsSync,
+                          hasCloudBackup: aggregateSync.hasCloudBackup,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${vehicle.make} ${vehicle.model} ${vehicle.year}',
+                          '${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.year}',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: Colors.grey[600]),
                         ),
@@ -102,7 +116,9 @@ class VehicleCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             hasInspectionDate
-                                ? _formatDate(vehicle.nextBesiktningDate!)
+                                ? _formatDate(
+                                    currentVehicle.nextBesiktningDate!,
+                                  ) // ✅ Changed
                                 : 'Ange ett datum för att visa',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,

@@ -343,71 +343,9 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _performSync(BuildContext context, WidgetRef ref) async {
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Synkroniserar...'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    try {
-      final syncManager = ref.read(syncManagerProvider);
-      final userId = syncManager.userId;
-
-      if (userId != null) {
-        // Migrate any offline data first
-        if (syncManager.hasLocalDataToMigrate()) {
-          await syncManager.migrateAnonymousData(userId);
-        }
-      }
-
-      // Perform sync
-      final result = await syncManager.fullSync();
-
-      // Invalidate all receipt providers to update UI
-      ref.invalidate(receiptNotifierProvider);
-      ref.invalidate(receiptByIdProvider);
-      ref.invalidate(receiptsForVehicleProvider);
-      ref.invalidate(receiptsForMaintenanceProvider);
-      ref.invalidate(receiptPendingSyncCountProvider);
-      ref.invalidate(pendingSyncCountProvider);
-
-      ref.invalidate(vehiclesProvider);
-      ref.invalidate(maintenanceProvider);
-
-      // Close loading dialog
-      if (context.mounted) Navigator.pop(context);
-
-      // Show result
-      if (result.success) {
-        if (result.totalSynced > 0) {
-          CustomSnackBar.showSuccess(context, result.toString());
-        } else {
-          CustomSnackBar.showSuccess(context, 'Allt synkroniserat');
-        }
-      } else {
-        CustomSnackBar.showError(context, result.message);
-      }
-    } catch (e) {
-      if (context.mounted) Navigator.pop(context);
-      if (context.mounted) {
-        CustomSnackBar.showError(context, 'Synkronisering misslyckades: $e');
-      }
-    }
+    await ref
+        .read(syncManagerProvider)
+        .performFullSyncWithUI(context, ref, showLoadingDialog: true);
   }
 
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {

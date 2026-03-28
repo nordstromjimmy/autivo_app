@@ -98,15 +98,18 @@ class ReceiptRepository {
   /// Update receipt metadata
   Future<void> update(Receipt receipt) async {
     try {
-      // Mark for sync
-      receipt.markForSync();
+      // Mark for sync using copyWith (immutable pattern)
+      final updatedReceipt = receipt.copyWith(
+        needsSync: true,
+        updatedAt: DateTime.now(),
+      );
 
       // Update in Hive
-      await _box.put(receipt.id, receipt);
+      await _box.put(updatedReceipt.id, updatedReceipt);
 
       // Try to sync if signed in
       if (SupabaseConfig.isSignedIn) {
-        await _updateReceiptMetadata(receipt);
+        await _updateReceiptMetadata(updatedReceipt);
       }
     } catch (e) {
       print('❌ Error updating receipt: $e');
@@ -430,13 +433,30 @@ class ReceiptRepository {
 
   /// Update receipt metadata in database
   Future<void> _updateReceiptMetadata(Receipt receipt) async {
-    await _supabase
-        .from('receipts')
-        .update(receipt.toJson())
-        .eq('id', receipt.supabaseId ?? receipt.id);
+    try {
+      // Update in Supabase
+      await _supabase
+          .from('receipts')
+          .update({
+            'description': receipt.description,
+            'date': receipt.date?.toIso8601String(),
+            'amount': receipt.amount,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', receipt.supabaseId ?? receipt.id);
 
-    receipt.markSynced(receipt.supabaseId ?? receipt.id);
-    await _box.put(receipt.id, receipt);
+      // Mark as synced using copyWith (immutable pattern)
+      final syncedReceipt = receipt.copyWith(
+        needsSync: false,
+        lastSyncedAt: DateTime.now(),
+      );
+
+      // Save synced version to Hive
+      await _box.put(syncedReceipt.id, syncedReceipt);
+    } catch (e) {
+      print('❌ Error updating receipt metadata: $e');
+      rethrow;
+    }
   }
 
   /// Download receipt metadata from database

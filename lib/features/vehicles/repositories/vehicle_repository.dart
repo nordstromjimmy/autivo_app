@@ -90,7 +90,7 @@ class VehicleRepository {
           }
         } else {
           // Date removed - cancel notification
-          await _notificationScheduler!.cancelInspectionReminder(vehicle.id);
+          await _notificationScheduler.cancelInspectionReminder(vehicle.id);
         }
       }
       // If date didn't change - do NOTHING (already scheduled from before)
@@ -267,7 +267,7 @@ class VehicleRepository {
     if (vehicle.nextBesiktningDate == null) return;
 
     // Schedule inspection reminder
-    await _notificationScheduler!.scheduleInspectionReminder(
+    await _notificationScheduler.scheduleInspectionReminder(
       vehicleId: vehicle.id,
       vehicleRegNumber: vehicle.registrationNumber,
       inspectionDate: vehicle.nextBesiktningDate!,

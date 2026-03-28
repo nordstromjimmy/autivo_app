@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vehicle.dart';
 import '../repositories/vehicle_repository.dart';
 import '../../maintenance/providers/maintenance_provider.dart';
+import '../../receipts/providers/receipt_provider.dart'; // ✅ Add this import
 import '../../../core/services/notifications/notification_scheduler.dart';
 
 // Provider for the vehicle repository
@@ -67,4 +68,65 @@ class VehiclesNotifier extends Notifier<List<Vehicle>> {
     await _repository.assignUserToAllVehicles(userId);
     state = _repository.getAll();
   }
+}
+
+// ==================== AGGREGATE SYNC STATUS PROVIDERS ====================
+
+/// Check if a vehicle OR any of its related data needs sync
+final vehicleNeedsSyncProvider = Provider.family<bool, String>((
+  ref,
+  vehicleId,
+) {
+  // Check vehicle itself
+  final vehicles = ref.watch(vehiclesProvider);
+  final vehicle = vehicles.firstWhere(
+    (v) => v.id == vehicleId,
+    orElse: () => throw Exception('Vehicle not found: $vehicleId'),
+  );
+
+  if (vehicle.needsSync) return true;
+
+  // Check maintenance records using family provider
+  final maintenanceRecords = ref.watch(maintenanceProvider(vehicleId));
+  if (maintenanceRecords.any((r) => r.needsSync)) return true;
+
+  // Check receipts using family provider
+  final receipts = ref.watch(receiptsForVehicleProvider(vehicleId));
+  if (receipts.any((r) => r.needsSync)) return true;
+
+  // Nothing needs sync
+  return false;
+});
+
+/// Get aggregate sync status for a vehicle (vehicle + maintenance + receipts)
+final vehicleAggregateSyncStatusProvider =
+    Provider.family<VehicleAggregateSync, String>((ref, vehicleId) {
+      final vehicles = ref.watch(vehiclesProvider);
+      final vehicle = vehicles.firstWhere(
+        (v) => v.id == vehicleId,
+        orElse: () => throw Exception('Vehicle not found: $vehicleId'),
+      );
+
+      final needsSync = ref.watch(vehicleNeedsSyncProvider(vehicleId));
+
+      return VehicleAggregateSync(
+        isSynced: vehicle.isSynced && !needsSync,
+        needsSync: needsSync,
+        hasCloudBackup: vehicle.hasCloudBackup,
+      );
+    });
+
+// ==================== AGGREGATE SYNC STATUS CLASS ====================
+
+/// Simple class to hold aggregate sync status
+class VehicleAggregateSync {
+  final bool isSynced;
+  final bool needsSync;
+  final bool hasCloudBackup;
+
+  const VehicleAggregateSync({
+    required this.isSynced,
+    required this.needsSync,
+    required this.hasCloudBackup,
+  });
 }
