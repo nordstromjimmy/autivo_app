@@ -20,22 +20,24 @@ class VerificationResult {
   });
 }
 
-/// Service to handle the complete verification flow
+/// Service to handle the complete verification flow:
+/// OCR validation → photo storage
 class VerificationService {
   final PhotoService _photoService = PhotoService();
   final OCRService _ocrService = OCRService();
 
-  /// Verify a vehicle with a photo of registration certificate
+  /// Verify a vehicle with a photo of its registration certificate.
+  /// Returns success only if all 3 OCR checks pass and the photo is saved.
   Future<VerificationResult> verifyVehicle(
     Vehicle vehicle,
     File photoFile,
   ) async {
     try {
-      // Step 1: Run OCR and validate document
-      final DocumentVerification validation = await _ocrService
-          .validateDocument(photoFile, vehicle.registrationNumber);
+      final validation = await _ocrService.validateDocument(
+        photoFile,
+        vehicle.registrationNumber,
+      );
 
-      // Step 2: Check if valid
       if (!validation.isValid) {
         return VerificationResult(
           success: false,
@@ -45,8 +47,7 @@ class VerificationService {
         );
       }
 
-      // Step 3: Save photo locally
-      final String? savedPath = await _photoService.saveVerificationPhoto(
+      final savedPath = await _photoService.saveVerificationPhoto(
         photoFile,
         vehicle.id,
       );
@@ -60,7 +61,6 @@ class VerificationService {
         );
       }
 
-      // Success!
       return VerificationResult(
         success: true,
         message: 'Fordon verifierat!',
@@ -76,22 +76,11 @@ class VerificationService {
     }
   }
 
-  /// Get verification photo for a vehicle
-  Future<File?> getVerificationPhoto(String vehicleId) async {
-    return await _photoService.getVerificationPhoto(vehicleId);
-  }
-
-  /// Delete verification and photo for a vehicle
+  /// Delete verification photo for a vehicle
   Future<bool> deleteVerification(String vehicleId) async {
-    return await _photoService.deleteVerificationPhoto(vehicleId);
+    return _photoService.deleteVerificationPhoto(vehicleId);
   }
 
-  /// Check if vehicle has verification photo
-  Future<bool> hasVerificationPhoto(String vehicleId) async {
-    return await _photoService.hasVerificationPhoto(vehicleId);
-  }
-
-  /// Dispose resources
   void dispose() {
     _ocrService.dispose();
   }

@@ -94,18 +94,14 @@ class VehicleInfoCard extends StatelessWidget {
                     color: vehicle.isVerified
                         ? _getVerificationColor(
                             vehicle.verificationLevel,
-                          ).withValues(alpha: 0.08)
+                          ).withValues(alpha: 0.01)
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       width: 1.5,
-                      color: vehicle.isVerified
-                          ? _getVerificationColor(
-                              vehicle.verificationLevel,
-                            ).withValues(alpha: 0.4)
-                          : Theme.of(
-                              context,
-                            ).colorScheme.outline.withValues(alpha: 0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Padding(

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../vehicles/models/vehicle.dart';
@@ -23,7 +22,6 @@ class _VehicleVerificationScreenState
     extends ConsumerState<VehicleVerificationScreen> {
   final VerificationService _verificationService = VerificationService();
   final PhotoService _photoService = PhotoService();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -31,26 +29,28 @@ class _VehicleVerificationScreenState
     super.dispose();
   }
 
+  /// Returns the up-to-date vehicle from the provider,
+  /// falling back to the passed-in vehicle if it's been removed.
+  Vehicle get _currentVehicle {
+    return ref
+        .watch(vehiclesProvider)
+        .firstWhere(
+          (v) => v.id == widget.vehicle.id,
+          orElse: () => widget.vehicle,
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Watch the vehicle provider to get real-time updates
-    final vehicles = ref.watch(vehiclesProvider);
-    final currentVehicle = vehicles.firstWhere(
-      (v) => v.id == widget.vehicle.id,
-      orElse: () => widget.vehicle, // Fallback to passed vehicle if not found
-    );
+    final vehicle = _currentVehicle;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Verifiera ägarskap')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Current status
-          _buildCurrentStatus(context, currentVehicle),
-
+          _buildCurrentStatus(context, vehicle),
           const SizedBox(height: 24),
-
-          // Verification option
           Text(
             'Verifiering',
             style: Theme.of(
@@ -58,20 +58,11 @@ class _VehicleVerificationScreenState
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-
-          // Self-verification option
-          _buildVerificationOption(context, currentVehicle),
-
+          _buildVerificationOption(context, vehicle),
           const SizedBox(height: 24),
-
-          // Show verification status if verified
-          if (currentVehicle.isVerified) _buildVerificationStatusCard(),
-
+          if (vehicle.isVerified) _buildVerificationStatusCard(vehicle),
           const SizedBox(height: 24),
-
-          // Why verify section
           _buildWhyVerifySection(context),
-
           const SizedBox(height: 32),
         ],
       ),
@@ -85,21 +76,15 @@ class _VehicleVerificationScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  'Nuvarande status',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+            Text(
+              'Nuvarande status',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
-              vehicle.verificationBadge.isEmpty
-                  ? 'Ej verifierad'
-                  : vehicle.verificationBadge,
+              vehicle.isVerified ? vehicle.verificationBadge : 'Ej verifierad',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -121,136 +106,93 @@ class _VehicleVerificationScreenState
 
   Widget _buildVerificationOption(BuildContext context, Vehicle vehicle) {
     final isVerified = vehicle.isVerified;
+    final canVerify = ref.watch(featureCheckerProvider).hasAccount;
 
-    return Consumer(
-      builder: (context, ref, _) {
-        final checker = ref.watch(featureCheckerProvider);
-        final canVerify = checker.hasAccount; // Verification requires account
-
-        return Card(
-          child: InkWell(
-            onTap: isVerified
-                ? null
-                : () {
-                    // Check if user has access
-                    if (!canVerify) {
-                      // Show account required dialog
-                      _showAccountRequiredForVerification(context);
-                      return;
-                    }
-
-                    // User has account - proceed
-                    _showVerificationOptions(context);
-                  },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isVerified
-                          ? Colors.green
-                          : Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+    return Card(
+      child: InkWell(
+        onTap: isVerified
+            ? null
+            : () {
+                if (!canVerify) {
+                  _showAccountRequiredDialog(context);
+                  return;
+                }
+                _showVerificationOptions(context);
+              },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isVerified
+                      ? Colors.green
+                      : Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  color: isVerified ? Colors.white : Colors.orange,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Själv-verifiering',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: isVerified ? Colors.white : Colors.orange,
-                      size: 28,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Ladda upp foto på registreringsbevis',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Själv-verifiering',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                    if (!canVerify && !isVerified) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.lock,
+                            size: 14,
+                            color: Colors.orange,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ladda upp foto på registreringsbevis',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        if (!canVerify && !isVerified) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(Icons.lock, size: 14, color: Colors.orange),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Kräver konto',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.orange[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'Kräver konto',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
-                      ],
-                    ),
-                  ),
-                  if (isVerified)
-                    const Icon(Icons.check_circle, color: Colors.green)
-                  else if (!canVerify)
-                    Icon(Icons.lock, color: Colors.orange[700])
-                  else
-                    Icon(Icons.chevron_right, color: Colors.grey[400]),
-                ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
+              if (isVerified)
+                const Icon(Icons.check_circle, color: Colors.green)
+              else if (!canVerify)
+                Icon(Icons.lock, color: Colors.orange[700])
+              else
+                Icon(Icons.chevron_right, color: Colors.grey[400]),
+            ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showAccountRequiredForVerification(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.account_circle, color: Colors.orange[700]),
-            const SizedBox(width: 8),
-            const Text('Konto krävs'),
-          ],
         ),
-        content: const Text(
-          'För att verifiera ditt fordon behöver du ett konto.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Avbryt'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SignUpScreen()),
-              );
-            },
-            child: const Text('Skapa konto'),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildVerificationStatusCard() {
+  Widget _buildVerificationStatusCard(Vehicle vehicle) {
     final theme = Theme.of(context);
 
     return Card(
@@ -289,7 +231,7 @@ class _VehicleVerificationScreenState
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => _showDeletePhotoConfirmation(),
+              onPressed: _showDeleteConfirmation,
               tooltip: 'Återställ verifiering',
             ),
           ],
@@ -365,6 +307,40 @@ class _VehicleVerificationScreenState
 
   // === ACTIONS ===
 
+  void _showAccountRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.account_circle, color: Colors.orange[700]),
+            const SizedBox(width: 8),
+            const Text('Konto krävs'),
+          ],
+        ),
+        content: const Text(
+          'För att verifiera ditt fordon behöver du ett konto.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Avbryt'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SignUpScreen()),
+              );
+            },
+            child: const Text('Skapa konto'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showVerificationOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -378,7 +354,7 @@ class _VehicleVerificationScreenState
               subtitle: const Text('Använd kameran'),
               onTap: () {
                 Navigator.pop(context);
-                _capturePhoto(useCamera: true);
+                _captureAndVerify(useCamera: true);
               },
             ),
             ListTile(
@@ -387,7 +363,7 @@ class _VehicleVerificationScreenState
               subtitle: const Text('Välj befintligt foto'),
               onTap: () {
                 Navigator.pop(context);
-                _capturePhoto(useCamera: false);
+                _captureAndVerify(useCamera: false);
               },
             ),
             const SizedBox(height: 8),
@@ -397,142 +373,127 @@ class _VehicleVerificationScreenState
     );
   }
 
-  Future<void> _capturePhoto({required bool useCamera}) async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _captureAndVerify({required bool useCamera}) async {
+    final photoFile = useCamera
+        ? await _photoService.takePicture()
+        : await _photoService.pickFromGallery();
 
-    try {
-      // Get photo using local PhotoService instance
-      File? photoFile;
-      if (useCamera) {
-        photoFile = await _photoService.takePicture();
-      } else {
-        photoFile = await _photoService.pickFromGallery();
-      }
+    if (photoFile == null || !mounted) return;
 
-      if (photoFile == null) {
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Show processing dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: Card(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Analyserar registreringsbevis...'),
-                    SizedBox(height: 8),
-                    Text(
-                      'Detta kan ta några sekunder',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
+    // Show processing dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Analyserar registreringsbevis...'),
+                SizedBox(height: 8),
+                Text(
+                  'Detta kan ta några sekunder',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-              ),
+              ],
             ),
           ),
-        );
-      }
+        ),
+      ),
+    );
 
-      // Verify the document
+    try {
       final result = await _verificationService.verifyVehicle(
         widget.vehicle,
         photoFile,
       );
 
-      // Close processing dialog
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context); // Close processing dialog
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Show result
       if (result.success) {
         _showVerificationSuccess(result);
       } else {
         _showVerificationFailure(result);
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
       if (mounted) {
+        Navigator.pop(context); // Close processing dialog
         CustomSnackBar.showError(context, 'Ett fel uppstod: $e');
       }
     }
   }
 
   void _showVerificationSuccess(VerificationResult result) {
+    /*     final doc = result.documentVerification!;
+    final successCount = [
+      doc.registrationNumberFound,
+      doc.hasRegistreringsbevis,
+      doc.hasTransportstyrelsen,
+    ].where((c) => c).length; */
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Row(
-          children: [
+          children: const [
             Icon(Icons.check_circle, color: Colors.green),
-            const SizedBox(width: 8),
-            const Text('Verifierad!'),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text('Verifierad!', overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Registreringsbeviset är giltigt!',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            // Show verification count
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(8),
+        content: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Verifieringen lyckades!',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.verified, color: Colors.green[700], size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '3/3 verifieringar lyckades',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green[900],
-                          ),
+              const SizedBox(height: 16),
+              /*             Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.verified, color: Colors.green[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$successCount/3 verifieringar lyckades',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[900],
                         ),
+                        softWrap: true,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          ],
+                    ),
+                  ],
+                ),
+              ), */
+            ],
+          ),
         ),
         actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _saveVerification(result);
-            },
-            child: const Text('Godkänn verifiering'),
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _saveVerification(result);
+              },
+              child: const Text('Godkänn'),
+            ),
           ),
         ],
       ),
@@ -541,24 +502,22 @@ class _VehicleVerificationScreenState
 
   void _showVerificationFailure(VerificationResult result) {
     final doc = result.documentVerification;
-
-    // Count successful verifications
-    int successCount = 0;
-    if (doc != null) {
-      if (doc.registrationNumberFound) successCount++;
-      if (doc.hasRegistreringsbevis) successCount++;
-      if (doc.hasTransportstyrelsen) successCount++;
-    }
+    final successCount = doc == null
+        ? 0
+        : [
+            doc.registrationNumberFound,
+            doc.hasRegistreringsbevis,
+            doc.hasTransportstyrelsen,
+          ].where((c) => c).length;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.warning_amber, color: Colors.orange),
-            const SizedBox(width: 8),
-            // WRAP Text IN Expanded
-            const Expanded(child: Text('Kunde inte verifiera')),
+            SizedBox(width: 8),
+            Expanded(child: Text('Kunde inte verifiera')),
           ],
         ),
         content: Column(
@@ -600,7 +559,7 @@ class _VehicleVerificationScreenState
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'För att verifiera fordonet måste alla 3 verifieringar lyckas.',
+                    'Alla 3 verifieringar måste lyckas för att godkänna dokumentet.',
                     style: TextStyle(fontSize: 13, color: Colors.orange[900]),
                   ),
                 ],
@@ -655,7 +614,7 @@ class _VehicleVerificationScreenState
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _capturePhoto(useCamera: true);
+              _captureAndVerify(useCamera: true);
             },
             child: const Text('Försök igen'),
           ),
@@ -673,17 +632,16 @@ class _VehicleVerificationScreenState
     );
 
     ref.read(vehiclesNotifierProvider.notifier).updateVehicle(updatedVehicle);
-
     CustomSnackBar.showSuccess(context, 'Fordon verifierat!');
   }
 
-  void _showDeletePhotoConfirmation() {
+  void _showDeleteConfirmation() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Återställ verifiering?'),
         content: const Text(
-          'Detta kommer att ta bort verifieringen och återställa fordonet till overifierat läge.',
+          'Detta tar bort verifieringen och återställer fordonet till overifierat läge.',
         ),
         actions: [
           TextButton(
@@ -720,7 +678,5 @@ class _VehicleVerificationScreenState
     }
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month} ${date.year}';
-  }
+  String _formatDate(DateTime date) => '${date.day}/${date.month} ${date.year}';
 }

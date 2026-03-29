@@ -181,54 +181,18 @@ class Vehicle extends HiveObject {
     return 'ok';
   }
 
-  bool get isVerified => verificationLevel != 'none';
+  bool get isVerified => verificationLevel == 'self';
 
-  // UPDATED: Use confidence score for better badge
+  /// Badge shown in the app UI
   String get verificationBadge {
-    if (verificationLevel == 'none') return '';
-
-    // For OCR-verified vehicles, use confidence score
-    if (verificationLevel == 'self' && verificationConfidence != null) {
-      if (verificationConfidence! >= 90) {
-        return 'Verifierad med registreringsbevis';
-      }
-      return '✓ Ägare';
-    }
-
-    // Fallback to old badge system
-    switch (verificationLevel) {
-      case 'self':
-        return '✓ Ägare';
-      case 'sms':
-        return '✓ Verifierad';
-      case 'official':
-        return '✓ Officiellt Verifierad';
-      default:
-        return '';
-    }
+    if (!isVerified) return '';
+    return 'Verifierad med registreringsbevis';
   }
 
-  // PDF-safe verification badge (removes checkmarks)
+  /// Badge used in PDF export (no special characters)
   String get verificationBadgePdf {
-    if (verificationLevel == 'none') return '';
-
-    if (verificationLevel == 'self' && verificationConfidence != null) {
-      if (verificationConfidence! >= 90) {
-        return 'VERIFIERAD';
-      }
-      return 'ÄGARE';
-    }
-
-    switch (verificationLevel) {
-      case 'self':
-        return 'ÄGARE';
-      case 'sms':
-        return 'VERIFIERAD';
-      case 'official':
-        return 'OFFICIELLT VERIFIERAD';
-      default:
-        return '';
-    }
+    if (!isVerified) return '';
+    return 'VERIFIERAD';
   }
 
   String get ownershipStatus {
