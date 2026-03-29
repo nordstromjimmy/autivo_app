@@ -39,10 +39,7 @@ class _CommonIssuesScreenState extends State<CommonIssuesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vanliga fel vid besiktning'),
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Vanliga fel vid besiktning')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -107,7 +104,7 @@ class _CommonIssuesScreenState extends State<CommonIssuesScreen> {
 
   Widget _buildHeaderCard() {
     return Card(
-      color: Colors.blue[50],
+      color: Theme.of(context).colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -115,15 +112,15 @@ class _CommonIssuesScreenState extends State<CommonIssuesScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue[700], size: 28),
+                const Icon(Icons.info_outline, color: Colors.blue, size: 28),
                 const SizedBox(width: 12),
-                Expanded(
+                const Expanded(
                   child: Text(
                     'Besiktningsstatistik 2024',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
+                      color: Colors.blue,
                     ),
                   ),
                 ),
@@ -135,7 +132,7 @@ class _CommonIssuesScreenState extends State<CommonIssuesScreen> {
               style: TextStyle(
                 fontSize: 14,
                 height: 1.5,
-                color: Colors.grey[800],
+                color: Colors.grey[400],
               ),
             ),
           ],
@@ -150,7 +147,14 @@ class _CommonIssuesScreenState extends State<CommonIssuesScreen> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          leading: _getSeverityIcon(issue.severity),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue[100],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.info, color: Colors.blue[700], size: 24),
+          ),
           title: Text(
             issue.title,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -227,47 +231,6 @@ class _CommonIssuesScreenState extends State<CommonIssuesScreen> {
         ),
       ),
     );
-  }
-
-  Widget _getSeverityIcon(String severity) {
-    switch (severity) {
-      case 'high':
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.red[100],
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.error, color: Colors.red[700], size: 24),
-        );
-      case 'medium':
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.orange[100],
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.warning, color: Colors.orange[700], size: 24),
-        );
-      case 'low':
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.blue[100],
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.info, color: Colors.blue[700], size: 24),
-        );
-      default:
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.help, color: Colors.grey[700], size: 24),
-        );
-    }
   }
 
   String _getCategoryLabel(String category) {
