@@ -98,16 +98,6 @@ class VehicleInfoCard extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
-                        Icon(
-                          vehicle.isVerified
-                              ? Icons.verified
-                              : Icons.verified_user,
-                          size: 20,
-                          color: vehicle.isVerified
-                              ? Colors.green
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,9 +109,9 @@ class VehicleInfoCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
+                                  color: vehicle.isVerified
+                                      ? Colors.green
+                                      : Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 2),
