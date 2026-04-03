@@ -24,6 +24,7 @@ class ReceiptNotifier extends Notifier<void> {
   Future<Receipt> addReceipt({
     required File imageFile,
     required String vehicleId,
+    required bool isPremium,
     String? maintenanceRecordId,
     String? description,
     DateTime? date,
@@ -32,6 +33,7 @@ class ReceiptNotifier extends Notifier<void> {
     final receipt = await _repository.add(
       imageFile: imageFile,
       vehicleId: vehicleId,
+      isPremium: isPremium,
       maintenanceRecordId: maintenanceRecordId,
       description: description,
       date: date,

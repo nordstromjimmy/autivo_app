@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/receipt.dart';
 import '../../../core/services/storage/image_compression_service.dart';
+import '../../../core/services/storage/storage_limit_service.dart';
 import '../../../core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,289 +12,225 @@ class ReceiptRepository {
   static const String bucketName = 'receipts';
 
   final ImageCompressionService _compressionService = ImageCompressionService();
+  final StorageLimitService _storageLimitService = StorageLimitService();
   final _supabase = Supabase.instance.client;
 
-  // Get Hive box
   Box<Receipt> get _box => Hive.box<Receipt>(boxName);
 
   // ==================== LOCAL OPERATIONS ====================
 
-  /// Get all receipts for a vehicle
   List<Receipt> getByVehicleId(String vehicleId) {
     return _box.values.where((r) => r.vehicleId == vehicleId).toList();
   }
 
-  /// Get receipts for a specific maintenance record
   List<Receipt> getByMaintenanceId(String maintenanceId) {
     return _box.values
         .where((r) => r.maintenanceRecordId == maintenanceId)
         .toList();
   }
 
-  /// Get receipt by ID
-  Receipt? getById(String id) {
-    return _box.get(id);
-  }
+  Receipt? getById(String id) => _box.get(id);
 
-  /// Get all receipts
-  List<Receipt> getAll() {
-    return _box.values.toList();
-  }
+  List<Receipt> getAll() => _box.values.toList();
 
-  /// Add new receipt (with image compression and upload)
+  /// Add new receipt (with image compression, storage limit check, and upload).
+  /// [isPremium] must be passed by the caller (e.g. from your premium provider).
   Future<Receipt> add({
     required File imageFile,
     required String vehicleId,
+    required bool isPremium,
     String? maintenanceRecordId,
     String? description,
     DateTime? date,
     double? amount,
   }) async {
-    try {
-      // Step 1: Compress image
-      final compressed = await _compressionService.compressReceiptImage(
-        imageFile,
+    // Step 1: Compress image
+    final compressed = await _compressionService.compressReceiptImage(
+      imageFile,
+    );
+
+    // Step 2: Check storage limit before doing anything else.
+    // Only enforced for signed-in users since anonymous users are local-only.
+    if (SupabaseConfig.isSignedIn) {
+      final fileSizeMb = compressed.compressedSize / 1048576.0;
+      final check = await _storageLimitService.checkCanUpload(
+        isPremium: isPremium,
+        fileSizeMb: fileSizeMb,
       );
-
-      // Step 2: Create receipt model
-      final userId = SupabaseConfig.currentUserId ?? '';
-      final receiptId = DateTime.now().millisecondsSinceEpoch.toString();
-
-      // Generate storage path
-      final storagePath = '$userId/$vehicleId/$receiptId.jpg';
-
-      final receipt = Receipt(
-        id: receiptId,
-        userId: userId,
-        vehicleId: vehicleId,
-        maintenanceRecordId: maintenanceRecordId,
-        storagePath: storagePath,
-        fileName: compressed.file.path.split('/').last,
-        fileSize: compressed.compressedSize,
-        mimeType: compressed.mimeType,
-        width: compressed.width,
-        height: compressed.height,
-        description: description,
-        date: date,
-        amount: amount,
-        needsSync: true,
-        localFilePath: compressed.file.path, // Store local path temporarily
-      );
-
-      // Step 3: Save to Hive first (local-first)
-      await _box.put(receipt.id, receipt);
-
-      // Step 4: Try to upload if signed in
-      if (SupabaseConfig.isSignedIn) {
-        await _trySyncReceipt(receipt);
+      if (!check.allowed) {
+        throw StorageLimitException(check.reason!);
       }
-
-      return receipt;
-    } catch (e) {
-      print('❌ Error adding receipt: $e');
-      rethrow;
     }
+
+    // Step 3: Build receipt model
+    final userId = SupabaseConfig.currentUserId ?? '';
+    final receiptId = DateTime.now().millisecondsSinceEpoch.toString();
+    final storagePath = '$userId/$vehicleId/$receiptId.jpg';
+
+    final receipt = Receipt(
+      id: receiptId,
+      userId: userId,
+      vehicleId: vehicleId,
+      maintenanceRecordId: maintenanceRecordId,
+      storagePath: storagePath,
+      fileName: compressed.file.path.split('/').last,
+      fileSize: compressed.compressedSize,
+      mimeType: compressed.mimeType,
+      width: compressed.width,
+      height: compressed.height,
+      description: description,
+      date: date,
+      amount: amount,
+      needsSync: true,
+      localFilePath: compressed.file.path,
+    );
+
+    // Step 4: Save locally first (local-first approach)
+    await _box.put(receipt.id, receipt);
+
+    // Step 5: Upload if signed in
+    if (SupabaseConfig.isSignedIn) {
+      await _trySyncReceipt(receipt);
+    }
+
+    return receipt;
   }
 
   /// Update receipt metadata
   Future<void> update(Receipt receipt) async {
-    try {
-      // Mark for sync using copyWith (immutable pattern)
-      final updatedReceipt = receipt.copyWith(
-        needsSync: true,
-        updatedAt: DateTime.now(),
-      );
+    final updatedReceipt = receipt.copyWith(
+      needsSync: true,
+      updatedAt: DateTime.now(),
+    );
 
-      // Update in Hive
-      await _box.put(updatedReceipt.id, updatedReceipt);
+    await _box.put(updatedReceipt.id, updatedReceipt);
 
-      // Try to sync if signed in
-      if (SupabaseConfig.isSignedIn) {
-        await _updateReceiptMetadata(updatedReceipt);
-      }
-    } catch (e) {
-      print('❌ Error updating receipt: $e');
-      rethrow;
+    if (SupabaseConfig.isSignedIn) {
+      await _updateReceiptMetadata(updatedReceipt);
     }
   }
 
-  /// Delete receipt (local and cloud)
+  /// Delete receipt (local and cloud).
+  /// Local cleanup always runs — a cloud failure will not leave a
+  /// dangling local record that the user can no longer remove.
   Future<void> delete(String receiptId) async {
-    try {
-      final receipt = getById(receiptId);
-      if (receipt == null) return;
+    final receipt = getById(receiptId);
+    if (receipt == null) return;
 
-      // Delete local file if exists
-      if (receipt.localFilePath != null) {
-        final localFile = File(receipt.localFilePath!);
-        if (await localFile.exists()) {
-          await localFile.delete();
-        }
+    // 1. Delete local file
+    if (receipt.localFilePath != null) {
+      final localFile = File(receipt.localFilePath!);
+      if (await localFile.exists()) {
+        await localFile.delete();
       }
+    }
 
-      // Delete from cloud if synced
-      if (receipt.supabaseId != null && SupabaseConfig.isSignedIn) {
+    // 2. Remove from Hive first — always succeeds locally regardless
+    //    of what happens with the cloud deletion below.
+    await _box.delete(receiptId);
+
+    // 3. Best-effort cloud deletion — use storagePath (always set) for
+    //    Storage, and supabaseId ?? receipt.id for the metadata row.
+    //    This handles the case where supabaseId was never populated locally
+    //    (e.g. receipt was created on another device).
+    if (SupabaseConfig.isSignedIn && receipt.storagePath.isNotEmpty) {
+      try {
         await _deleteFromStorage(receipt.storagePath);
-        await _deleteMetadata(receipt.supabaseId!);
+        await _deleteMetadata(receipt.supabaseId ?? receipt.id);
+      } catch (_) {
+        // Cloud delete failed (e.g. connection dropped). The file may
+        // remain in Supabase Storage but is already gone locally.
       }
-
-      // Delete from Hive
-      await _box.delete(receiptId);
-    } catch (e) {
-      print('❌ Error deleting receipt: $e');
-      rethrow;
     }
   }
 
   /// Delete all receipts for a vehicle
   Future<void> deleteByVehicleId(String vehicleId) async {
-    try {
-      final receipts = getByVehicleId(vehicleId);
-
-      for (final receipt in receipts) {
-        await delete(receipt.id);
-      }
-    } catch (e) {
-      print('❌ Error deleting vehicle receipts: $e');
-      rethrow;
+    final receipts = getByVehicleId(vehicleId);
+    for (final receipt in receipts) {
+      await delete(receipt.id);
     }
   }
 
   // ==================== SYNC OPERATIONS ====================
 
-  /// Sync a single receipt to cloud
   Future<bool> _trySyncReceipt(Receipt receipt) async {
     try {
-      // Upload image file
-      if (receipt.localFilePath != null) {
-        final imageFile = File(receipt.localFilePath!);
+      if (receipt.localFilePath == null) return false;
 
-        if (await imageFile.exists()) {
-          // Get file size
-          final fileSize = await imageFile.length();
+      final imageFile = File(receipt.localFilePath!);
+      if (!await imageFile.exists()) return false;
 
-          // Upload to storage
-          await _uploadToStorage(
-            imageFile: imageFile,
-            storagePath: receipt.storagePath,
-          );
+      final fileSize = await imageFile.length();
 
-          // Upload metadata with file size
-          final cloudId = await _uploadMetadata(
-            receipt,
-            fileSize,
-          ); // Pass file size
+      await _uploadToStorage(
+        imageFile: imageFile,
+        storagePath: receipt.storagePath,
+      );
 
-          // Mark as synced
-          receipt.markSynced(cloudId!);
-          await _box.put(receipt.id, receipt);
+      final cloudId = await _uploadMetadata(receipt, fileSize);
+      receipt.markSynced(cloudId!);
+      await _box.put(receipt.id, receipt);
 
-          return true;
-        } else {
-          print('  ❌ File does not exist: ${receipt.localFilePath}');
-          return false;
-        }
-      } else {
-        print('  ❌ No local file path set');
-        return false;
-      }
-    } catch (e, stackTrace) {
-      print('❌ Error syncing receipt ${receipt.id}: $e');
-      print('Stack trace: $stackTrace');
+      return true;
+    } catch (e) {
       return false;
     }
   }
 
-  /// Sync all pending receipts to cloud
   Future<int> syncPending() async {
-    if (!SupabaseConfig.isSignedIn) {
-      return 0;
-    }
+    if (!SupabaseConfig.isSignedIn) return 0;
 
     final pendingReceipts = _box.values.where((r) => r.needsSync).toList();
-
     int syncedCount = 0;
 
     for (final receipt in pendingReceipts) {
-      if (await _trySyncReceipt(receipt)) {
-        syncedCount++;
-      } else {
-        print('❌ Failed to sync receipt ${receipt.id}');
-      }
+      if (await _trySyncReceipt(receipt)) syncedCount++;
     }
 
     return syncedCount;
   }
 
-  /// Pull receipts from cloud for a vehicle
   Future<void> pullFromCloud(String vehicleId) async {
     if (!SupabaseConfig.isSignedIn) return;
 
-    try {
-      final userId = SupabaseConfig.currentUserId;
-      if (userId == null) return;
+    final userId = SupabaseConfig.currentUserId;
+    if (userId == null) return;
 
-      // Download metadata
-      final cloudReceipts = await _downloadMetadata(
-        userId: userId,
-        vehicleId: vehicleId,
-      );
+    final cloudReceipts = await _downloadMetadata(
+      userId: userId,
+      vehicleId: vehicleId,
+    );
 
-      // Get local receipts for this vehicle
-      final localReceipts = getByVehicleId(vehicleId);
-      final localIds = localReceipts.map((r) => r.id).toSet();
-      final cloudIds = cloudReceipts.map((r) => r.id).toSet();
+    final localReceipts = getByVehicleId(vehicleId);
+    final localIds = localReceipts.map((r) => r.id).toSet();
+    final cloudIds = cloudReceipts.map((r) => r.id).toSet();
 
-      // Remove local receipts not in cloud (unless pending sync)
-      for (final localId in localIds) {
-        if (!cloudIds.contains(localId)) {
-          final localReceipt = _box.get(localId);
-
-          // Don't delete if pending upload
-          if (localReceipt != null && localReceipt.needsSync) {
-            continue;
-          }
-
-          // Delete local receipt not in cloud
-          await _box.delete(localId);
-        }
+    for (final localId in localIds) {
+      if (!cloudIds.contains(localId)) {
+        final localReceipt = _box.get(localId);
+        if (localReceipt != null && localReceipt.needsSync) continue;
+        await _box.delete(localId);
       }
+    }
 
-      // Add or merge receipts from cloud
-      for (final cloudReceipt in cloudReceipts) {
-        final localReceipt = _box.get(cloudReceipt.id);
-
-        if (localReceipt == null) {
-          // New from cloud - add it
-          await _box.put(cloudReceipt.id, cloudReceipt);
-        } else if (!localReceipt.needsSync) {
-          // Update from cloud if not pending sync
-          await _box.put(cloudReceipt.id, cloudReceipt);
-        }
-        // If needsSync, keep local version
+    for (final cloudReceipt in cloudReceipts) {
+      final localReceipt = _box.get(cloudReceipt.id);
+      if (localReceipt == null || !localReceipt.needsSync) {
+        await _box.put(cloudReceipt.id, cloudReceipt);
       }
-    } catch (e) {
-      print('❌ Error pulling receipts from cloud: $e');
-      rethrow;
     }
   }
 
-  /// Get local file for receipt (download if needed)
   Future<File?> getLocalFile(Receipt receipt) async {
     try {
-      // Check if local file exists
       if (receipt.localFilePath != null) {
         final localFile = File(receipt.localFilePath!);
-        if (await localFile.exists()) {
-          return localFile;
-        }
+        if (await localFile.exists()) return localFile;
       }
 
-      // Download from cloud if needed
       if (receipt.supabaseId != null && SupabaseConfig.isSignedIn) {
         final tempDir = await getTemporaryDirectory();
-
-        // EXTRACT filename from storagePath instead of using receipt.fileName
         final fileName = receipt.storagePath.split('/').last;
         final localPath = '${tempDir.path}/$fileName';
 
@@ -302,7 +239,6 @@ class ReceiptRepository {
           localPath: localPath,
         );
 
-        // Update local path in Hive
         final updatedReceipt = receipt.copyWith(localFilePath: localPath);
         await _box.put(receipt.id, updatedReceipt);
 
@@ -310,56 +246,41 @@ class ReceiptRepository {
       }
 
       return null;
-    } catch (e, stackTrace) {
-      print('❌ Error getting local file: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       return null;
     }
   }
 
-  /// Get count of receipts pending sync
   int getPendingSyncCount() {
     return _box.values.where((r) => r.needsSync).length;
   }
 
-  /// Assign userId to all local receipts (for migration)
-  /// Assign userId to all local receipts (for migration)
   Future<void> assignUserToAllReceipts(String userId) async {
-    final receipts = _box.values.toList();
-
-    // Filter only receipts that need migration (null or empty userId)
-    final needsMigration = receipts.where((r) => r.userId.isEmpty).toList();
-
-    if (needsMigration.isEmpty) {
-      return;
-    }
+    final needsMigration = _box.values.where((r) => r.userId.isEmpty).toList();
+    if (needsMigration.isEmpty) return;
 
     for (final receipt in needsMigration) {
-      // Fix storagePath if it doesn't start with userId
       String fixedStoragePath = receipt.storagePath;
 
-      // If path starts with "/" or doesn't have userId, fix it
       if (fixedStoragePath.startsWith('/')) {
-        // Remove leading slash and prepend userId
-        fixedStoragePath = '$userId${fixedStoragePath}';
+        fixedStoragePath = '$userId$fixedStoragePath';
       } else if (!fixedStoragePath.startsWith(userId)) {
-        // Path exists but doesn't start with userId, prepend it
         fixedStoragePath = '$userId/$fixedStoragePath';
       }
 
-      final updated = receipt.copyWith(
-        userId: userId,
-        storagePath: fixedStoragePath,
-        needsSync: true,
+      await _box.put(
+        receipt.id,
+        receipt.copyWith(
+          userId: userId,
+          storagePath: fixedStoragePath,
+          needsSync: true,
+        ),
       );
-
-      await _box.put(receipt.id, updated);
     }
   }
 
-  // ==================== SUPABASE STORAGE OPERATIONS ====================
+  // ==================== SUPABASE STORAGE ====================
 
-  /// Upload image to Supabase Storage
   Future<void> _uploadToStorage({
     required File imageFile,
     required String storagePath,
@@ -373,7 +294,6 @@ class ReceiptRepository {
         );
   }
 
-  /// Download image from Supabase Storage
   Future<File> _downloadFromStorage({
     required String storagePath,
     required String localPath,
@@ -386,89 +306,61 @@ class ReceiptRepository {
     return file;
   }
 
-  /// Delete image from Supabase Storage
   Future<void> _deleteFromStorage(String storagePath) async {
     await _supabase.storage.from(bucketName).remove([storagePath]);
   }
 
-  // ==================== SUPABASE DATABASE OPERATIONS ====================
+  // ==================== SUPABASE DATABASE ====================
 
-  /// Upload receipt metadata to database
-  /// Upload receipt metadata to Supabase
   Future<String?> _uploadMetadata(Receipt receipt, int fileSize) async {
-    try {
-      // Extract filename from storage path
-      final fileName = receipt.storagePath.split('/').last;
+    final fileName = receipt.storagePath.split('/').last;
 
-      final data = {
-        'id': receipt.id,
-        'user_id': receipt.userId,
-        'vehicle_id': receipt.vehicleId,
-        'maintenance_record_id': receipt.maintenanceRecordId,
-        'description': receipt.description,
-        'date': receipt.date?.toIso8601String(),
-        'amount': receipt.amount,
-        'storage_path': receipt.storagePath,
-        'file_name': fileName,
-        'file_size': fileSize,
-        'mime_type': 'image/jpeg',
-        'created_at': receipt.createdAt.toIso8601String(),
-        'updated_at': receipt.updatedAt.toIso8601String(),
-      };
+    final response = await _supabase
+        .from('receipts')
+        .upsert({
+          'id': receipt.id,
+          'user_id': receipt.userId,
+          'vehicle_id': receipt.vehicleId,
+          'maintenance_record_id': receipt.maintenanceRecordId,
+          'description': receipt.description,
+          'date': receipt.date?.toIso8601String(),
+          'amount': receipt.amount,
+          'storage_path': receipt.storagePath,
+          'file_name': fileName,
+          'file_size': fileSize,
+          'mime_type': 'image/jpeg',
+          'created_at': receipt.createdAt.toIso8601String(),
+          'updated_at': receipt.updatedAt.toIso8601String(),
+        })
+        .select()
+        .single();
 
-      final response = await _supabase
-          .from('receipts')
-          .upsert(data)
-          .select()
-          .single();
-
-      final cloudId = response['id'] as String;
-
-      return cloudId;
-    } catch (e) {
-      print('  ❌ Failed to upload metadata: $e');
-      rethrow;
-    }
+    return response['id'] as String;
   }
 
-  /// Update receipt metadata in database
   Future<void> _updateReceiptMetadata(Receipt receipt) async {
-    try {
-      // Update in Supabase
-      await _supabase
-          .from('receipts')
-          .update({
-            'description': receipt.description,
-            'date': receipt.date?.toIso8601String(),
-            'amount': receipt.amount,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', receipt.supabaseId ?? receipt.id);
+    await _supabase
+        .from('receipts')
+        .update({
+          'description': receipt.description,
+          'date': receipt.date?.toIso8601String(),
+          'amount': receipt.amount,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', receipt.supabaseId ?? receipt.id);
 
-      // Mark as synced using copyWith (immutable pattern)
-      final syncedReceipt = receipt.copyWith(
-        needsSync: false,
-        lastSyncedAt: DateTime.now(),
-      );
-
-      // Save synced version to Hive
-      await _box.put(syncedReceipt.id, syncedReceipt);
-    } catch (e) {
-      print('❌ Error updating receipt metadata: $e');
-      rethrow;
-    }
+    await _box.put(
+      receipt.id,
+      receipt.copyWith(needsSync: false, lastSyncedAt: DateTime.now()),
+    );
   }
 
-  /// Download receipt metadata from database
   Future<List<Receipt>> _downloadMetadata({
     required String userId,
     String? vehicleId,
   }) async {
     var query = _supabase.from('receipts').select().eq('user_id', userId);
-
-    if (vehicleId != null) {
-      query = query.eq('vehicle_id', vehicleId);
-    }
+    if (vehicleId != null) query = query.eq('vehicle_id', vehicleId);
 
     final response = await query.order('created_at', ascending: false);
 
@@ -477,7 +369,6 @@ class ReceiptRepository {
         .toList();
   }
 
-  /// Delete receipt metadata from database
   Future<void> _deleteMetadata(String receiptId) async {
     await _supabase.from('receipts').delete().eq('id', receiptId);
   }

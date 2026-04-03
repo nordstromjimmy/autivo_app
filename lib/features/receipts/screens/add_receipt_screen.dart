@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/services/storage/storage_limit_service.dart';
 import '../../premium/screens/paywall_screen.dart';
+import '../../premium/utils/feature_checker.dart';
 import '../../premium/utils/receipt_limit_checker.dart';
 import '../models/receipt.dart';
 import '../providers/receipt_provider.dart';
@@ -155,12 +157,14 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
               .read(receiptNotifierProvider.notifier)
               .updateReceipt(updatedReceipt);
         } else {
+          final isPremium = ref.read(featureCheckerProvider).isPremium;
           // Add new receipt
           await ref
               .read(receiptNotifierProvider.notifier)
               .addReceipt(
                 imageFile: _imageFile!,
                 vehicleId: widget.vehicleId,
+                isPremium: isPremium,
                 maintenanceRecordId: widget.maintenanceRecordId,
                 description: _descriptionController.text.trim().isNotEmpty
                     ? _descriptionController.text.trim()
@@ -182,10 +186,11 @@ class _AddReceiptScreenState extends ConsumerState<AddReceiptScreen> {
         }
       } catch (e) {
         if (mounted) {
-          setState(() {
-            _isUploading = false;
-          });
-          CustomSnackBar.showError(context, 'Kunde inte spara kvitto: $e');
+          setState(() => _isUploading = false);
+          final message = e is StorageLimitException
+              ? e.message
+              : 'Kunde inte spara kvitto: $e';
+          CustomSnackBar.showError(context, message);
         }
       }
     }

@@ -38,13 +38,7 @@ class VehicleInfoCard extends StatelessWidget {
                           ),
                           if (vehicle.isVerified) ...[
                             const SizedBox(width: 8),
-                            Icon(
-                              Icons.verified,
-                              size: 20,
-                              color: _getVerificationColor(
-                                vehicle.verificationLevel,
-                              ),
-                            ),
+                            Icon(Icons.verified, size: 20, color: Colors.green),
                           ],
                           Spacer(),
                           IconButton(
@@ -91,17 +85,13 @@ class VehicleInfoCard extends StatelessWidget {
                 ), // Slightly more rounded
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: vehicle.isVerified
-                        ? _getVerificationColor(
-                            vehicle.verificationLevel,
-                          ).withValues(alpha: 0.01)
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       width: 1.5,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withValues(alpha: 0.3),
+                      color: vehicle.isVerified
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   child: Padding(
@@ -114,7 +104,7 @@ class VehicleInfoCard extends StatelessWidget {
                               : Icons.verified_user,
                           size: 20,
                           color: vehicle.isVerified
-                              ? _getVerificationColor(vehicle.verificationLevel)
+                              ? Colors.green
                               : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 8),
@@ -129,11 +119,9 @@ class VehicleInfoCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
-                                  color: vehicle.isVerified
-                                      ? _getVerificationColor(
-                                          vehicle.verificationLevel,
-                                        )
-                                      : Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -178,19 +166,6 @@ class VehicleInfoCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getVerificationColor(String level) {
-    switch (level) {
-      case 'self':
-        return Colors.green;
-      case 'sms':
-        return Colors.green;
-      case 'official':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
   }
 
   Widget _buildInfoColumn(String label, String value) {

@@ -24,94 +24,69 @@ class InsuranceInfoCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Header row
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.green[50],
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
                       Icons.shield_outlined,
                       color: Colors.green[700],
-                      size: 24,
+                      size: 20,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Försäkring',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        if (hasInsurance && vehicle.insuranceCompany != null)
-                          Text(
-                            vehicle.insuranceCompany!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                      ],
+                    child: Text(
+                      hasInsurance ? vehicle.insuranceCompany! : 'Försäkring',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  Icon(Icons.edit_outlined, color: Colors.grey[400], size: 20),
+                  Icon(Icons.edit_outlined, color: Colors.grey[400], size: 18),
                 ],
               ),
 
               if (!hasInsurance) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
-                  'Ingen försäkringsinformation tillagd',
+                  'Tryck för att lägga till försäkringsinformation',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    fontSize: 12,
+                    color: Colors.grey[500],
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tryck för att lägga till',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
               ] else ...[
-                const SizedBox(height: 16),
-
-                // Insurance details
-                _buildInfoRow(context, 'Typ', vehicle.insuranceTypeDisplay),
-
-                if (vehicle.insuranceCostPerYear != null)
-                  _buildInfoRow(
-                    context,
-                    'Kostnad/år',
-                    '${vehicle.insuranceCostPerYear!.toStringAsFixed(0)} kr',
-                  ),
-
-                if (vehicle.insuranceRenewalDate != null)
-                  _buildInfoRow(
-                    context,
-                    'Förnyelsedatum',
-                    DateFormat(
-                      'd MMM yyyy',
-                      'sv',
-                    ).format(vehicle.insuranceRenewalDate!),
-                    isWarning: _isRenewalSoon(vehicle.insuranceRenewalDate!),
-                  ),
-
-                if (vehicle.insurancePolicyNumber != null)
-                  _buildInfoRow(
-                    context,
-                    'Försäkringsnummer',
-                    vehicle.insurancePolicyNumber!,
-                  ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 6,
+                  children: [
+                    _buildChip(context, vehicle.insuranceTypeDisplay),
+                    if (vehicle.insuranceCostPerYear != null)
+                      _buildChip(
+                        context,
+                        '${vehicle.insuranceCostPerYear!.toStringAsFixed(0)} kr/år',
+                      ),
+                    if (vehicle.insurancePolicyNumber != null)
+                      _buildChip(context, vehicle.insurancePolicyNumber!),
+                    if (vehicle.insuranceRenewalDate != null)
+                      _buildChip(
+                        context,
+                        'Förnyas ${DateFormat('d MMM yyyy', 'sv').format(vehicle.insuranceRenewalDate!)}',
+                      ),
+                  ],
+                ),
               ],
             ],
           ),
@@ -120,45 +95,7 @@ class InsuranceInfoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isWarning = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          const SizedBox(width: 2),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isWarning ? Colors.orange[700] : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  bool _isRenewalSoon(DateTime renewalDate) {
-    final now = DateTime.now();
-    final daysUntilRenewal = renewalDate.difference(now).inDays;
-    return daysUntilRenewal <= 30 && daysUntilRenewal >= 0;
+  Widget _buildChip(BuildContext context, String label) {
+    return Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600]));
   }
 }
