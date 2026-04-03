@@ -24,6 +24,17 @@ class VehicleDetailsScreen extends ConsumerStatefulWidget {
 class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
   int _selectedIndex = 0; // Start on first tab
 
+  String _appBarTitle() {
+    switch (_selectedIndex) {
+      case 1:
+        return 'Service & Reparationer';
+      case 2:
+        return 'Kvitton';
+      default:
+        return 'Översikt';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final vehicles = ref.watch(vehiclesProvider);
@@ -58,9 +69,10 @@ class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
         title: Column(
           children: [
             Text(
-              vehicle.registrationNumber,
+              _appBarTitle(),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            SizedBox(height: 2),
             Text(
               '${vehicle.make} ${vehicle.model}',
               style: const TextStyle(

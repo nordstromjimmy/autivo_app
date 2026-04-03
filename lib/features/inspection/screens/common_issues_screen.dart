@@ -39,7 +39,7 @@ class _CommonIssuesScreenState extends State<CommonIssuesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Vanliga fel vid besiktning')),
+      appBar: AppBar(title: const Text('Vanliga fel')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
