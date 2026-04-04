@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:mina_fordon/core/services/notifications/notification_scheduler.dart';
 import '../../../core/services/notifications/notification_preferences.dart';
@@ -244,15 +245,10 @@ class VehicleRepository {
   /// Merge local and cloud vehicle (conflict resolution)
   /// Last-write-wins strategy
   Vehicle _mergeVehicles(Vehicle local, Vehicle cloud) {
-    // If local has changes and is newer, keep local
     if (local.needsSync && local.updatedAt.isAfter(cloud.updatedAt)) {
-      return local.copyWith(
-        supabaseId: cloud.supabaseId, // Preserve cloud ID
-        needsSync: true, // Still needs upload
-      );
+      return local.copyWith(supabaseId: cloud.supabaseId, needsSync: true);
     }
 
-    // Cloud is newer or equal - use cloud version
     return cloud.copyWith(needsSync: false);
   }
 

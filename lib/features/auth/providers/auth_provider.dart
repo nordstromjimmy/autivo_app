@@ -57,14 +57,8 @@ class AuthNotifier extends Notifier<AsyncValue<void>> {
       );
 
       if (response.user != null) {
-        // Check if there's local data to migrate
-        if (_syncManager.hasLocalDataToMigrate()) {
-          await _syncManager.migrateAnonymousData(response.user!.id);
-        }
-
-        // Refresh premium status after signup
+        // Migration and sync handled by _handlePostSignup in sign_up_screen.dart
         _refreshPremiumStatus();
-
         state = const AsyncValue.data(null);
       } else {
         state = AsyncValue.error(
@@ -88,12 +82,9 @@ class AuthNotifier extends Notifier<AsyncValue<void>> {
       );
 
       if (response.user != null) {
-        // Pull data from cloud after sign in
-        await _syncManager.pullOnly();
-
-        // Refresh premium status after login
+        // Sync is handled by _handlePostLogin in sign_in_screen.dart
+        // Do NOT pull here — it would overwrite pending local changes
         _refreshPremiumStatus();
-
         state = const AsyncValue.data(null);
       } else {
         state = AsyncValue.error('Inloggning misslyckades', StackTrace.current);

@@ -1,4 +1,5 @@
 //import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -30,9 +31,6 @@ class SettingsScreen extends ConsumerWidget {
     final isSignedIn = ref.watch(isSignedInProvider);
     final currentUser = ref.watch(currentUserProvider);
     final syncManager = ref.read(syncManagerProvider);
-
-    // REMOVE IN PROD.
-    final bool debugMode = true;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Inställningar')),
@@ -205,7 +203,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           Divider(),
           //if (kDebugMode) ...[
-          if (debugMode) ...[
+          if (kDebugMode) ...[
             ListTile(
               leading: const Icon(Icons.bug_report),
               title: const Text('Debug Tools'),
@@ -390,7 +388,6 @@ class SettingsScreen extends ConsumerWidget {
 
       if (context.mounted) {
         CustomSnackBar.showSuccess(context, 'Utloggad');
-        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (context.mounted) {

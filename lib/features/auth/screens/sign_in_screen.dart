@@ -48,7 +48,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       });
 
       try {
-        // Sign in
         await ref
             .read(authNotifierProvider.notifier)
             .signIn(
@@ -61,17 +60,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         await authState.when(
           data: (_) async {
             if (mounted) {
-              // Handle post-login sync
               await _handlePostLogin();
 
               if (mounted) {
-                // Navigate using pushAndRemoveUntil (cleaner than popUntil)
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  (route) => false, // Remove all previous routes
+                  (route) => false,
                 );
 
-                // Show success message
                 await Future.delayed(const Duration(milliseconds: 300));
                 if (mounted) {
                   CustomSnackBar.showSuccess(context, 'Inloggad');
@@ -87,7 +83,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           },
         );
       } catch (e) {
-        print('❌ Sign in error: $e');
         if (mounted) {
           CustomSnackBar.showError(context, 'Något gick fel: $e');
         }
@@ -101,11 +96,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  /// Simplified post-login with offline deletion handling
   Future<void> _handlePostLogin() async {
     try {
       final syncManager = ref.read(syncManagerProvider);
       final currentUserId = syncManager.userId;
+
       if (currentUserId == null) return;
 
       await _identifyRevenueCatUser(currentUserId);
@@ -117,8 +112,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         await MaintenanceDeletionTracker.clearAll();
       } else {
         await _processOfflineMaintenanceDeletions();
-
-        // Check if anonymous local vehicles would exceed this user's cloud limit
         await _discardAnonymousVehiclesIfOverLimit(currentUserId);
       }
 
@@ -138,7 +131,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           .read(syncManagerProvider)
           .performFullSyncWithUI(context, ref, showLoadingDialog: false);
     } catch (e) {
-      print('❌ Error during post-login: $e');
       rethrow;
     }
   }
@@ -178,35 +170,27 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _identifyRevenueCatUser(String supabaseUserId) async {
     try {
       await Purchases.logIn(supabaseUserId);
-
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
     } catch (e) {
-      print('⚠️ Error identifying RevenueCat user: $e');
+      // Don't throw — continue even if RevenueCat fails
     }
   }
 
-  /// Process maintenance records deleted while offline
   Future<void> _processOfflineMaintenanceDeletions() async {
     final deletedRecordIds = MaintenanceDeletionTracker.getDeletedRecords();
-
-    if (deletedRecordIds.isEmpty) {
-      return;
-    }
+    if (deletedRecordIds.isEmpty) return;
 
     final syncService = SyncService();
 
     for (final recordId in deletedRecordIds) {
       try {
-        // Delete from cloud (if it exists there)
         await syncService.deleteMaintenanceRecord(recordId);
       } catch (e) {
-        print('⚠️ Could not delete maintenance from cloud: $recordId - $e');
-        // Continue anyway - record is already deleted locally
+        // Continue — record is already deleted locally
       }
     }
 
-    // Clear deletion tracker
     await MaintenanceDeletionTracker.clearDeletedRecords();
   }
 
@@ -227,7 +211,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                // Logo/Title
                 Text(
                   'AUTIVO',
                   textAlign: TextAlign.center,
@@ -248,7 +231,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 const SizedBox(height: 60),
 
-                // Email field
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -272,7 +254,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 const SizedBox(height: 16),
 
-                // Password field
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
@@ -305,7 +286,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 const SizedBox(height: 24),
 
-                // Sign in button
                 ElevatedButton(
                   onPressed: isLoading ? null : _signIn,
                   style: ElevatedButton.styleFrom(
@@ -325,7 +305,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 const SizedBox(height: 16),
 
-                // Forgot password
                 TextButton(
                   onPressed: isLoading ? null : () => _showForgotPassword(),
                   child: const Text('Glömt lösenord?'),
@@ -333,7 +312,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 const SizedBox(height: 40),
 
-                // Divider
                 Row(
                   children: [
                     const Expanded(child: Divider()),
@@ -350,7 +328,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 const SizedBox(height: 24),
 
-                // Sign up button
                 OutlinedButton(
                   onPressed: isLoading
                       ? null
@@ -370,7 +347,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                 const SizedBox(height: 24),
 
-                // Continue without account
                 TextButton(
                   onPressed: isLoading
                       ? null

@@ -26,27 +26,25 @@ class SyncManager {
 
   // ==================== SYNC STATUS ====================
 
-  /// Check if user is signed in
   bool get isSignedIn => SupabaseConfig.isSignedIn;
-
-  /// Get current user ID
   String? get userId => SupabaseConfig.currentUserId;
 
-  /// Get total count of items needing sync
   int get totalPendingCount {
     return _vehicleRepo.getPendingSyncCount() +
         _maintenanceRepo.getPendingSyncCount() +
         _receiptRepo.getPendingSyncCount();
   }
 
-  /// Check if device can sync (has internet)
   Future<bool> canSync() async {
     return await _syncService.canSync();
   }
 
   // ==================== SYNC OPERATIONS ====================
 
-  /// Perform full sync (pull then push for all data)
+  /// Perform full sync.
+  /// Push FIRST so local offline edits reach the cloud before we pull
+  /// and merge — this prevents the cloud version overwriting local changes
+  /// when timestamps are close or when supabaseId wasn't set yet.
   Future<SyncResult> fullSync() async {
     if (!isSignedIn) {
       return SyncResult(
@@ -69,22 +67,22 @@ class SyncManager {
     }
 
     try {
-      // Step 1: Pull from cloud first
+      // Step 1: Push local changes first so the cloud has the latest
+      // before we pull and merge
+      final vehiclesSynced = await _vehicleRepo.syncPending();
+      final recordsSynced = await _maintenanceRepo.syncPending();
+      final receiptsSynced = await _receiptRepo.syncPending();
+
+      // Step 2: Pull from cloud (safe now — local changes are already uploaded)
       await _vehicleRepo.pullFromCloud();
 
-      // Step 2: Pull maintenance records and receipts for all vehicles
       final vehicles = _vehicleRepo.getAll();
       for (final vehicle in vehicles) {
         await _maintenanceRepo.pullFromCloud(vehicle.id);
         await _receiptRepo.pullFromCloud(vehicle.id);
       }
 
-      // Step 3: Push pending changes
-      final vehiclesSynced = await _vehicleRepo.syncPending();
-      final recordsSynced = await _maintenanceRepo.syncPending();
-      final receiptsSynced = await _receiptRepo.syncPending();
-
-      // Step 4: Refresh providers to update UI
+      // Step 3: Refresh UI
       _invalidateAllProviders();
 
       return SyncResult(
@@ -106,13 +104,11 @@ class SyncManager {
   }
 
   /// Perform full sync with optional UI feedback
-  /// Set showDialog=false for pull-to-refresh scenarios
   Future<SyncResult> performFullSyncWithUI(
     BuildContext context,
     WidgetRef ref, {
     bool showLoadingDialog = true,
   }) async {
-    // Show loading (optional)
     if (showLoadingDialog) {
       showDialog(
         context: context,
@@ -136,21 +132,23 @@ class SyncManager {
     }
 
     try {
-      // STEP 1: Migrate if needed
+      // Migrate anonymous data if needed (e.g. after signup)
       if (userId != null && hasLocalDataToMigrate()) {
         await migrateAnonymousData(userId!);
       }
 
-      // STEP 2: Sync
+      debugPrint('=== BEFORE FULL SYNC ===');
+      final vehicles = _vehicleRepo.getAll();
+      for (final v in vehicles) {
+        debugPrint('${v.registrationNumber} | needsSync: ${v.needsSync}');
+      }
+
       final result = await fullSync();
 
-      // STEP 3: Invalidate providers
       _invalidateAllProviders();
 
-      // Close loading (if shown)
       if (showLoadingDialog && context.mounted) Navigator.pop(context);
 
-      // Show result
       if (context.mounted) {
         if (result.success) {
           if (result.totalSynced > 0) {
@@ -163,7 +161,7 @@ class SyncManager {
         }
       }
 
-      return result; // ✅ Return the result
+      return result;
     } catch (e) {
       if (showLoadingDialog && context.mounted) Navigator.pop(context);
       if (context.mounted) {
@@ -197,7 +195,6 @@ class SyncManager {
       final recordsSynced = await _maintenanceRepo.syncPending();
       final receiptsSynced = await _receiptRepo.syncPending();
 
-      // Refresh providers to update UI
       _invalidateAllProviders();
 
       return SyncResult(
@@ -239,14 +236,13 @@ class SyncManager {
         await _receiptRepo.pullFromCloud(vehicle.id);
       }
 
-      // Refresh providers to update UI
       _invalidateAllProviders();
 
       return SyncResult(
         success: true,
         message: 'Nerladdning lyckades',
         vehiclesSynced: vehicles.length,
-        recordsSynced: 0, // We don't track this separately
+        recordsSynced: 0,
         receiptsSynced: 0,
       );
     } catch (e) {
@@ -262,54 +258,38 @@ class SyncManager {
 
   // ==================== USER MIGRATION ====================
 
-  /// When user signs up/in - assign their ID to all existing data
+  /// Assign user ID to all anonymous local data (called after signup)
   Future<void> migrateAnonymousData(String userId) async {
     await _vehicleRepo.assignUserToAllVehicles(userId);
     await _maintenanceRepo.assignUserToAllRecords(userId);
     await _receiptRepo.assignUserToAllReceipts(userId);
   }
 
-  /// Check if user has any local data to migrate
+  /// Check if there is any local data without a userId (anonymous data)
   bool hasLocalDataToMigrate() {
-    // Check vehicles
-    final vehicles = _vehicleRepo.getAll();
-    final hasVehicles = vehicles.any(
+    final hasVehicles = _vehicleRepo.getAll().any(
       (v) => v.userId == null || v.userId!.isEmpty,
     );
 
-    // Check receipts
-    final receipts = _receiptRepo.getAll();
-    final hasReceipts = receipts.any((r) => r.userId.isEmpty);
+    final hasReceipts = _receiptRepo.getAll().any((r) => r.userId.isEmpty);
 
-    // Check maintenance records
-    final maintenance = _maintenanceRepo.getAll();
-    final hasMaintenance = maintenance.any(
+    final hasMaintenance = _maintenanceRepo.getAll().any(
       (m) => m.userId == null || m.userId!.isEmpty,
     );
 
-    final needsMigration = hasVehicles || hasReceipts || hasMaintenance;
-
-    return needsMigration;
+    return hasVehicles || hasReceipts || hasMaintenance;
   }
 
   // ==================== HELPERS ====================
 
-  /// Refresh providers to update UI after sync
   void _invalidateAllProviders() {
-    // Vehicles
     _ref.invalidate(vehiclesNotifierProvider);
     _ref.invalidate(vehiclesProvider);
-
-    // Maintenance
     _ref.invalidate(maintenanceProvider);
-
-    // Receipts
     _ref.invalidate(receiptNotifierProvider);
     _ref.invalidate(receiptByIdProvider);
     _ref.invalidate(receiptsForVehicleProvider);
     _ref.invalidate(receiptsForMaintenanceProvider);
-
-    // Sync status
     _ref.invalidate(pendingSyncCountProvider);
     _ref.invalidate(receiptPendingSyncCountProvider);
   }
@@ -339,13 +319,11 @@ class SyncResult {
     if (!success) return message;
     if (totalSynced == 0) return 'Allting syncat';
 
-    // Include receipts in message
     final parts = <String>[];
     if (vehiclesSynced > 0) parts.add('$vehiclesSynced fordon');
     if (recordsSynced > 0) parts.add('$recordsSynced poster');
     if (receiptsSynced > 0) parts.add('$receiptsSynced kvitton');
 
-    if (parts.isEmpty) return 'Allting syncat';
     return 'Synkroniserat: ${parts.join(', ')}';
   }
 }

@@ -45,7 +45,7 @@ class AuthService {
   // Listen to auth state changes
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  // Anonymous to authenticated migration
+  /*   // Anonymous to authenticated migration
   // When user signs up after using app anonymously
   Future<void> migrateAnonymousData({
     required String newUserId,
@@ -54,5 +54,5 @@ class AuthService {
     // This will be called when user signs up
     // We'll update all local data to have the new userId
     await onMigrate(newUserId);
-  }
+  } */
 }
