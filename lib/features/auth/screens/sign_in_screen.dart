@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/storage/storage_service.dart';
+import '../../receipts/providers/receipt_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../premium/providers/purchase_provider.dart';
 import '../../premium/providers/combined_premium_provider.dart';
@@ -103,29 +106,27 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     try {
       final syncManager = ref.read(syncManagerProvider);
       final currentUserId = syncManager.userId;
-
       if (currentUserId == null) return;
 
-      // Link RevenueCat to Supabase user
       await _identifyRevenueCatUser(currentUserId);
 
       final isDifferentUser = UserSessionTracker.isDifferentUser(currentUserId);
 
       if (isDifferentUser) {
-        // DIFFERENT USER - Clear everything
         await clearAllLocalData();
         await MaintenanceDeletionTracker.clearAll();
       } else {
-        // SAME USER - Process offline deletions only
         await _processOfflineMaintenanceDeletions();
+
+        // Check if anonymous local vehicles would exceed this user's cloud limit
+        await _discardAnonymousVehiclesIfOverLimit(currentUserId);
       }
 
-      // Save user ID
       await UserSessionTracker.saveUserId(currentUserId);
 
-      // Invalidate ALL providers (including feature gates)
       ref.invalidate(vehiclesProvider);
       ref.invalidate(maintenanceProvider);
+      ref.invalidate(receiptNotifierProvider);
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
@@ -133,14 +134,44 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       ref.invalidate(userTierProvider);
       ref.invalidate(featureCheckerProvider);
 
-      await syncManager.performFullSyncWithUI(
-        context,
-        ref,
-        showLoadingDialog: false,
-      );
+      await ref
+          .read(syncManagerProvider)
+          .performFullSyncWithUI(context, ref, showLoadingDialog: false);
     } catch (e) {
       print('❌ Error during post-login: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _discardAnonymousVehiclesIfOverLimit(String userId) async {
+    try {
+      final cloudResponse = await Supabase.instance.client
+          .from('vehicles')
+          .select('id')
+          .eq('user_id', userId);
+      final cloudCount = (cloudResponse as List).length;
+
+      if (cloudCount == 0) return;
+
+      final checker = ref.read(featureCheckerProvider);
+      if (!checker.canAddVehicle(cloudCount)) {
+        final anonymousVehicles = StorageService.getAllVehicles()
+            .where((v) => v.userId == null || v.userId!.isEmpty)
+            .toList();
+
+        for (final vehicle in anonymousVehicles) {
+          await StorageService.deleteVehicle(vehicle.id);
+        }
+
+        if (anonymousVehicles.isNotEmpty && mounted) {
+          CustomSnackBar.showInfo(
+            context,
+            'Lokalt fordon togs bort — du har redan nått gränsen för din plan.',
+          );
+        }
+      }
+    } catch (e) {
+      // Non-fatal — let sync proceed even if this check fails
     }
   }
 
