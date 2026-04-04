@@ -1,5 +1,4 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'notification_types.dart';
 
@@ -69,23 +68,6 @@ class NotificationService {
       if (granted == false) return false;
     }
 
-    // Check permission instead of requesting + opening settings
-    if (await _isAndroid12OrHigher()) {
-      final status = await Permission.scheduleExactAlarm.status;
-
-      // If not granted, just return false (don't open settings automatically)
-      if (!status.isGranted) {
-        return false; //
-      }
-    }
-
-    return true;
-  }
-
-  /// Check if Android 12 or higher
-  Future<bool> _isAndroid12OrHigher() async {
-    // You'll need device_info_plus for this
-    // For now, return true to always request permission
     return true;
   }
 
@@ -108,7 +90,7 @@ class NotificationService {
       body,
       tzDateTime,
       _getNotificationDetails(type),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
