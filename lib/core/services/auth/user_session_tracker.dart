@@ -20,7 +20,6 @@ class UserSessionTracker {
       final box = Hive.box(_boxName);
       return box.get(_userIdKey) as String?;
     } catch (e) {
-      print('Error getting last user ID: $e');
       return null;
     }
   }

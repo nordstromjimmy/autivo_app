@@ -132,6 +132,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       ref.invalidate(premiumFeaturesProvider);
       ref.invalidate(userTierProvider);
       ref.invalidate(featureCheckerProvider);
+
+      await syncManager.performFullSyncWithUI(
+        context,
+        ref,
+        showLoadingDialog: false,
+      );
     } catch (e) {
       print('❌ Error during post-login: $e');
       rethrow;

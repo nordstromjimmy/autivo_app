@@ -29,8 +29,6 @@ class _VehicleVerificationScreenState
     super.dispose();
   }
 
-  /// Returns the up-to-date vehicle from the provider,
-  /// falling back to the passed-in vehicle if it's been removed.
   Vehicle get _currentVehicle {
     return ref
         .watch(vehiclesProvider)
@@ -51,17 +49,21 @@ class _VehicleVerificationScreenState
         children: [
           _buildCurrentStatus(context, vehicle),
           const SizedBox(height: 24),
-          Text(
-            'Verifiering',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          _buildVerificationOption(context, vehicle),
-          const SizedBox(height: 24),
-          if (vehicle.isVerified) _buildVerificationStatusCard(vehicle),
-          const SizedBox(height: 24),
+          if (!vehicle.isVerified) ...[
+            Text(
+              'Verifiering',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildVerificationOption(context, vehicle),
+            const SizedBox(height: 24),
+          ],
+          if (vehicle.isVerified) ...[
+            _buildVerificationStatusCard(vehicle),
+            const SizedBox(height: 24),
+          ],
           _buildWhyVerifySection(context),
           const SizedBox(height: 32),
         ],
@@ -105,20 +107,17 @@ class _VehicleVerificationScreenState
   }
 
   Widget _buildVerificationOption(BuildContext context, Vehicle vehicle) {
-    final isVerified = vehicle.isVerified;
     final canVerify = ref.watch(featureCheckerProvider).hasAccount;
 
     return Card(
       child: InkWell(
-        onTap: isVerified
-            ? null
-            : () {
-                if (!canVerify) {
-                  _showAccountRequiredDialog(context);
-                  return;
-                }
-                _showVerificationOptions(context);
-              },
+        onTap: () {
+          if (!canVerify) {
+            _showAccountRequiredDialog(context);
+            return;
+          }
+          _showVerificationOptions(context);
+        },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -127,14 +126,12 @@ class _VehicleVerificationScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isVerified
-                      ? Colors.green
-                      : Colors.orange.withValues(alpha: 0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.camera_alt,
-                  color: isVerified ? Colors.white : Colors.orange,
+                  color: Colors.orange,
                   size: 28,
                 ),
               ),
@@ -155,7 +152,7 @@ class _VehicleVerificationScreenState
                       'Ladda upp foto på registreringsbevis',
                       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
-                    if (!canVerify && !isVerified) ...[
+                    if (!canVerify) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -179,9 +176,7 @@ class _VehicleVerificationScreenState
                   ],
                 ),
               ),
-              if (isVerified)
-                const Icon(Icons.check_circle, color: Colors.green)
-              else if (!canVerify)
+              if (!canVerify)
                 Icon(Icons.lock, color: Colors.orange[700])
               else
                 Icon(Icons.chevron_right, color: Colors.grey[400]),
@@ -380,7 +375,6 @@ class _VehicleVerificationScreenState
 
     if (photoFile == null || !mounted) return;
 
-    // Show processing dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -412,7 +406,7 @@ class _VehicleVerificationScreenState
         photoFile,
       );
 
-      if (mounted) Navigator.pop(context); // Close processing dialog
+      if (mounted) Navigator.pop(context);
 
       if (result.success) {
         _showVerificationSuccess(result);
@@ -421,26 +415,19 @@ class _VehicleVerificationScreenState
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close processing dialog
+        Navigator.pop(context);
         CustomSnackBar.showError(context, 'Ett fel uppstod: $e');
       }
     }
   }
 
   void _showVerificationSuccess(VerificationResult result) {
-    /*     final doc = result.documentVerification!;
-    final successCount = [
-      doc.registrationNumberFound,
-      doc.hasRegistreringsbevis,
-      doc.hasTransportstyrelsen,
-    ].where((c) => c).length; */
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         scrollable: true,
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.check_circle, color: Colors.green),
             SizedBox(width: 8),
             Expanded(
@@ -448,42 +435,9 @@ class _VehicleVerificationScreenState
             ),
           ],
         ),
-        content: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Verifieringen lyckades!',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              /*             Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.verified, color: Colors.green[700], size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '$successCount/3 verifieringar lyckades',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[900],
-                        ),
-                        softWrap: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ), */
-            ],
-          ),
+        content: const Text(
+          'Verifieringen lyckades!',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         actions: [
           Center(

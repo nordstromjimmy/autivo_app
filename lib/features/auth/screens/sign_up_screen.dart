@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mina_fordon/features/auth/screens/sign_in_screen.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import '../../../core/services/storage/storage_service.dart';
+import '../../../core/utils/tracking/clear_local_data.dart';
+import '../../receipts/providers/receipt_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../maintenance/providers/maintenance_provider.dart';
 import '../../premium/providers/purchase_provider.dart';
@@ -115,18 +118,30 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     try {
       final syncManager = ref.read(syncManagerProvider);
       final currentUserId = syncManager.userId;
-
       if (currentUserId == null) return;
 
-      // Link RevenueCat to Supabase user
       await _identifyRevenueCatUser(currentUserId);
 
-      // Save user ID for session tracking
+      // If local data belongs to a different previous user, clear it first
+      // before sync so we don't accidentally upload their data
+      final localVehicles = StorageService.getAllVehicles();
+      final hasOtherUserData = localVehicles.any(
+        (v) =>
+            v.userId != null &&
+            v.userId!.isNotEmpty &&
+            v.userId != currentUserId,
+      );
+
+      if (hasOtherUserData) {
+        await clearAllLocalData();
+      }
+
       await UserSessionTracker.saveUserId(currentUserId);
 
-      // Invalidate ALL providers
+      // Invalidate providers first
       ref.invalidate(vehiclesProvider);
       ref.invalidate(maintenanceProvider);
+      ref.invalidate(receiptNotifierProvider);
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
@@ -134,9 +149,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       ref.invalidate(userTierProvider);
       ref.invalidate(featureCheckerProvider);
 
-      // ... rest of existing code ...
+      // Sync pulls the new user's cloud data (empty for new accounts)
+      // and uploads any anonymous local data the user had before signing up.
+      // This is what makes the UI correct without a manual refresh.
+      await syncManager.performFullSyncWithUI(
+        context,
+        ref,
+        showLoadingDialog: false,
+      );
     } catch (e) {
-      print('❌ Error during post-signup: $e');
+      if (mounted) {
+        CustomSnackBar.showError(context, 'Något gick fel vid registrering');
+      }
       rethrow;
     }
   }

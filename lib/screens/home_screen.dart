@@ -6,6 +6,8 @@ import '../features/auth/providers/auth_provider.dart';
 import '../core/services/sync/sync_manager.dart';
 import '../core/utils/helpers/custom_snackbar.dart';
 import '../features/premium/utils/vehicle_limit_checker.dart';
+import '../features/premium/providers/combined_premium_provider.dart';
+import '../features/premium/providers/purchase_provider.dart';
 import '../features/vehicles/widgets/vehicle_card.dart';
 import '../features/vehicles/screens/add_vehicle_screen.dart';
 import 'settings_screen.dart';
@@ -36,18 +38,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final vehicles = ref.watch(vehiclesProvider);
     final syncManager = ref.read(syncManagerProvider);
 
-    // CRITICAL: Listen for auth state changes
-    // When user logs in, trigger a sync
+    // Watch premium loading state — same pattern as vehicle_details_screen
+    final premiumStatus = ref.watch(premiumStatusProvider);
+    final supabaseStatus = ref.watch(supabasePremiumStatusProvider);
+    final isPremiumLoading =
+        premiumStatus.isLoading || supabaseStatus.isLoading;
+
     ref.listen<AsyncValue<void>>(authNotifierProvider, (previous, next) {
       next.whenData((_) async {
-        // User just logged in - sync immediately
         if (syncManager.isSignedIn && !_hasAutoSynced) {
-          //await _performAutoSync();
-
-          // Force rebuild after sync
-          if (mounted) {
-            setState(() {});
-          }
+          if (mounted) setState(() {});
         }
       });
     });
@@ -91,7 +91,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ? SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // Make ListView scrollable even when empty (for pull-to-refresh)
                     return SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: ConstrainedBox(
@@ -152,33 +151,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         elevation: 0,
-        onPressed: () async {
-          // Check if user can add more vehicles
-          final canAdd = await VehicleLimitChecker.checkLimitAndShowPaywall(
-            context,
-            ref,
-          );
+        // Null disables the button while premium status is loading
+        onPressed: isPremiumLoading
+            ? null
+            : () async {
+                final canAdd =
+                    await VehicleLimitChecker.checkLimitAndShowPaywall(
+                      context,
+                      ref,
+                    );
 
-          if (canAdd && context.mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
-            );
-          }
-        },
-        child: const Icon(Icons.add),
+                if (canAdd && context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddVehicleScreen(),
+                    ),
+                  );
+                }
+              },
+        child: isPremiumLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : const Icon(Icons.add),
       ),
     );
   }
 
-  /// Handle pull-to-refresh
   Future<void> _handleRefresh() async {
     final syncManager = ref.read(syncManagerProvider);
-
-    // Reset auto-sync flag
     _hasAutoSynced = false;
 
-    // Only sync if user is signed in
     if (!syncManager.isSignedIn) {
       if (mounted) {
         CustomSnackBar.showInfo(context, 'Logga in för att synkronisera');
@@ -186,12 +195,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    // Use the same method, but without dialog (RefreshIndicator shows spinner)
     await syncManager.performFullSyncWithUI(
       context,
       ref,
-      showLoadingDialog:
-          false, // Don't show dialog, RefreshIndicator handles loading
+      showLoadingDialog: false,
     );
   }
 }

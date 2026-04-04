@@ -193,13 +193,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange[700]),
-            SizedBox(width: 8),
-            Expanded(child: Text('Ta bort fordon?')),
-          ],
-        ),
+        title: Row(children: [Expanded(child: Text('Ta bort fordon?'))]),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,

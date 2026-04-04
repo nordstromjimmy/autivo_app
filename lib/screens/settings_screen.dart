@@ -234,7 +234,7 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
         content: const Text(
-          '⚠️ VARNING: Detta kommer att:\n\n'
+          'VARNING: Detta kommer att:\n\n'
           '• Radera ditt konto permanent\n'
           '• Ta bort all data från molnet\n'
           '• Behålla lokal data (för offline-användning)\n'
@@ -246,6 +246,7 @@ class SettingsScreen extends ConsumerWidget {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Avbryt'),
           ),
+          SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -349,30 +350,52 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
-    // ... existing confirmation dialog ...
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logga ut'),
+        content: const Text(
+          'Är du säker på att du vill logga ut?\n\n'
+          'Din data finns kvar lokalt och synkas när du loggar in igen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Avbryt'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logga ut'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true) return;
 
     try {
-      // Step 1: Sign out from Supabase
       await Supabase.instance.client.auth.signOut();
-
-      // Step 2: Log out from RevenueCat (back to anonymous)
       await Purchases.logOut();
-
-      // Step 3: Clear session
       await UserSessionTracker.clearUserId();
 
-      // Step 4: Invalidate providers
       ref.invalidate(premiumStatusProvider);
       ref.invalidate(supabasePremiumStatusProvider);
       ref.invalidate(combinedPremiumStatusProvider);
       ref.invalidate(premiumFeaturesProvider);
       ref.invalidate(userTierProvider);
       ref.invalidate(featureCheckerProvider);
+      ref.invalidate(vehiclesProvider);
+      ref.invalidate(maintenanceProvider);
+      ref.invalidate(receiptNotifierProvider);
 
-      // ... rest of existing code ...
+      if (context.mounted) {
+        CustomSnackBar.showSuccess(context, 'Utloggad');
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (e) {
-      print('❌ Error during logout: $e');
-      // ... error handling ...
+      if (context.mounted) {
+        CustomSnackBar.showError(context, 'Fel vid utloggning: $e');
+      }
     }
   }
 }
