@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/auth/auth_service.dart';
-import '../../../core/services/sync/sync_manager.dart';
 import '../../premium/providers/combined_premium_provider.dart';
 import '../../premium/providers/purchase_provider.dart';
 
