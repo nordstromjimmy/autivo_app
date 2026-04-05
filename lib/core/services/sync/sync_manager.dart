@@ -137,12 +137,6 @@ class SyncManager {
         await migrateAnonymousData(userId!);
       }
 
-      debugPrint('=== BEFORE FULL SYNC ===');
-      final vehicles = _vehicleRepo.getAll();
-      for (final v in vehicles) {
-        debugPrint('${v.registrationNumber} | needsSync: ${v.needsSync}');
-      }
-
       final result = await fullSync();
 
       _invalidateAllProviders();

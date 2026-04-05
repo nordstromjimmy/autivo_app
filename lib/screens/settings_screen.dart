@@ -202,7 +202,6 @@ class SettingsScreen extends ConsumerWidget {
                 _openUrl(context, 'https://autivo.se/integritetspolicy'),
           ),
           Divider(),
-          //if (kDebugMode) ...[
           if (kDebugMode) ...[
             ListTile(
               leading: const Icon(Icons.bug_report),

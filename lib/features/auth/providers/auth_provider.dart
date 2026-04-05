@@ -37,12 +37,12 @@ final authNotifierProvider = NotifierProvider<AuthNotifier, AsyncValue<void>>(
 
 class AuthNotifier extends Notifier<AsyncValue<void>> {
   late final AuthService _authService;
-  late final SyncManager _syncManager;
+  //late final SyncManager _syncManager;
 
   @override
   AsyncValue<void> build() {
     _authService = ref.read(authServiceProvider);
-    _syncManager = ref.read(syncManagerProvider);
+    // _syncManager = ref.read(syncManagerProvider);
     return const AsyncValue.data(null);
   }
 
