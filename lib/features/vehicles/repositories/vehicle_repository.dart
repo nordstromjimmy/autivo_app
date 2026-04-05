@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:mina_fordon/core/services/notifications/notification_scheduler.dart';
 import '../../../core/services/notifications/notification_preferences.dart';
