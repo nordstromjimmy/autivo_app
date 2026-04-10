@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Notification type definitions
 enum NotificationType { inspectionReminder, serviceReminder, maintenanceDue }
 
@@ -55,15 +57,14 @@ extension NotificationTypeExtension on NotificationType {
   }
 
   /// Icon for UI
-  String get icon {
+  IconData get icon {
     switch (this) {
       case NotificationType.inspectionReminder:
-        return '🔍';
+        return Icons.info_outline;
       case NotificationType.serviceReminder:
-        return '🔧';
-
+        return Icons.build_outlined;
       case NotificationType.maintenanceDue:
-        return '⏰';
+        return Icons.timer_outlined;
     }
   }
 }

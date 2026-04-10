@@ -42,7 +42,6 @@ class NotificationService {
 
   /// Request notification permissions
   Future<bool> requestPermissions() async {
-    // Android 13+ notification permissions
     final androidImpl = _notifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -53,7 +52,6 @@ class NotificationService {
       if (granted == false) return false;
     }
 
-    // iOS permissions
     final iosImpl = _notifications
         .resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/notifications/notification_service.dart';
 import '../core/services/notifications/notification_types.dart';
-import '../core/services/notifications/notification_preferences.dart';
 import '../core/utils/helpers/custom_snackbar.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -16,7 +15,6 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
 
 class _NotificationSettingsScreenState
     extends ConsumerState<NotificationSettingsScreen> {
-  final _preferences = NotificationPreferences();
   final _service = NotificationService();
 
   bool _permissionsGranted = false;
@@ -33,12 +31,10 @@ class _NotificationSettingsScreenState
 
     await _service.initialize();
 
-    // Check if permissions are granted
     final notifStatus = await Permission.notification.status;
-    final alarmStatus = await Permission.scheduleExactAlarm.status;
 
     setState(() {
-      _permissionsGranted = notifStatus.isGranted && alarmStatus.isGranted;
+      _permissionsGranted = notifStatus.isGranted;
       _isLoading = false;
     });
   }
@@ -141,22 +137,39 @@ class _NotificationSettingsScreenState
               ),
             ),
 
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Påminnelser',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    NotificationType.inspectionReminder.icon,
+                    size: 24,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        NotificationType.inspectionReminder.channelName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '30 dagar innan',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-
-          // Inspection Reminders
-          _buildNotificationTypeTile(NotificationType.inspectionReminder),
-
-          // Insurance Renewal
-          //_buildNotificationTypeTile(NotificationType.insuranceRenewal),
-
-          // Service Reminder
-          //_buildNotificationTypeTile(NotificationType.serviceReminder),
           const Divider(),
 
           // View Pending Notifications
@@ -170,94 +183,6 @@ class _NotificationSettingsScreenState
         ],
       ),
     );
-  }
-
-  Widget _buildNotificationTypeTile(NotificationType type) {
-    return FutureBuilder<bool>(
-      future: _preferences.isEnabled(type),
-      builder: (context, enabledSnapshot) {
-        final isEnabled = enabledSnapshot.data ?? type.defaultEnabled;
-
-        return FutureBuilder<int>(
-          future: _preferences.getDaysBefore(type),
-          builder: (context, daysSnapshot) {
-            final daysBefore = daysSnapshot.data ?? 30; // ✅ Default to 30
-
-            return ExpansionTile(
-              leading: Text(type.icon, style: const TextStyle(fontSize: 24)),
-              title: Text(type.channelName),
-              subtitle: Text(
-                isEnabled ? '$daysBefore dagar innan' : 'Inaktiverad',
-                style: TextStyle(color: isEnabled ? Colors.green : Colors.grey),
-              ),
-              trailing: Switch(
-                value: isEnabled && _permissionsGranted,
-                onChanged: _permissionsGranted
-                    ? (value) async {
-                        await _preferences.setEnabled(type, value);
-                        setState(() {});
-                      }
-                    : null,
-              ),
-              children: [
-                if (isEnabled && _permissionsGranted)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Påminn mig:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          children: [30].map((days) {
-                            // Changed from [7, 14, 30]
-                            return ChoiceChip(
-                              label: Text('$days dagar innan'),
-                              selected: daysBefore == days,
-                              onSelected: (selected) async {
-                                if (selected) {
-                                  await _preferences.setDaysBefore(type, days);
-                                  setState(() {});
-                                }
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Du får en påminnelse 30 dagar innan ${_getEventName(type)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Helper method for display names
-  String _getEventName(NotificationType type) {
-    switch (type) {
-      case NotificationType.inspectionReminder:
-        return 'besiktning';
-
-      case NotificationType.serviceReminder:
-        return 'service';
-      case NotificationType.maintenanceDue:
-        return 'underhåll förfaller';
-    }
   }
 
   Future<void> _showPendingNotifications() async {
