@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,7 +57,14 @@ void main() async {
 
   await SupabaseConfig.initialize();
 
-  const revenueCatApiKey = 'goog_rACkxKFNfcoLyHBphVvdqdTuHdz';
+  String revenueCatApiKey;
+
+  if (Platform.isIOS) {
+    revenueCatApiKey = 'appl_your_ios_key_here';
+  } else {
+    revenueCatApiKey = 'goog_rACkxKFNfcoLyHBphVvdqdTuHdz';
+  }
+
   await RevenueCatService().initialize(revenueCatApiKey);
 
   runApp(const ProviderScope(child: MyApp()));
