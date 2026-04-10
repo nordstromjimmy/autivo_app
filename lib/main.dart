@@ -60,7 +60,7 @@ void main() async {
   String revenueCatApiKey;
 
   if (Platform.isIOS) {
-    revenueCatApiKey = 'appl_your_ios_key_here';
+    revenueCatApiKey = 'appl_OgzaoboPTqMjZQyUgrTkzNxeTHU';
   } else {
     revenueCatApiKey = 'goog_rACkxKFNfcoLyHBphVvdqdTuHdz';
   }
