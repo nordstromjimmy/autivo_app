@@ -101,8 +101,13 @@ class Vehicle extends HiveObject {
   @HiveField(29)
   final String? insuranceType;
 
+  // Stored as bool? so build_runner generates `fields[30] as bool? ?? true`
+  // which safely defaults old vehicles (missing field) to påställd.
   @HiveField(30)
-  final bool isInTraffic;
+  final bool? isInTrafficRaw;
+
+  /// Always returns a non-nullable bool. Old vehicles (null in storage) → true.
+  bool get isInTraffic => isInTrafficRaw ?? true;
 
   Vehicle({
     required this.id,
@@ -136,8 +141,9 @@ class Vehicle extends HiveObject {
     this.insuranceRenewalDate,
     this.insurancePolicyNumber,
     this.insuranceType,
-    this.isInTraffic = true,
-  }) : createdAt = createdAt ?? DateTime.now(),
+    bool isInTraffic = true,
+  }) : isInTrafficRaw = isInTraffic,
+       createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
   // Mark this vehicle as needing sync (call after any edit)

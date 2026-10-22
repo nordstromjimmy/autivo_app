@@ -47,7 +47,6 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       insuranceRenewalDate: fields[27] as DateTime?,
       insurancePolicyNumber: fields[28] as String?,
       insuranceType: fields[29] as String?,
-      isInTraffic: fields[30] as bool,
     );
   }
 
@@ -116,7 +115,7 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       ..writeByte(29)
       ..write(obj.insuranceType)
       ..writeByte(30)
-      ..write(obj.isInTraffic);
+      ..write(obj.isInTrafficRaw);
   }
 
   @override
