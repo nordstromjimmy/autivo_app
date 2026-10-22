@@ -47,13 +47,14 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       insuranceRenewalDate: fields[27] as DateTime?,
       insurancePolicyNumber: fields[28] as String?,
       insuranceType: fields[29] as String?,
+      isInTraffic: fields[30] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Vehicle obj) {
     writer
-      ..writeByte(30)
+      ..writeByte(31)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -113,7 +114,9 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       ..writeByte(28)
       ..write(obj.insurancePolicyNumber)
       ..writeByte(29)
-      ..write(obj.insuranceType);
+      ..write(obj.insuranceType)
+      ..writeByte(30)
+      ..write(obj.isInTraffic);
   }
 
   @override

@@ -323,6 +323,7 @@ class VehicleRepository {
           ? DateTime.parse(data['insurance_renewal_date'] as String)
           : null,
       insurancePolicyNumber: data['insurance_policy_number'] as String?,
+      isInTraffic: data['is_in_traffic'] as bool? ?? true,
     );
   }
 
@@ -353,6 +354,7 @@ class VehicleRepository {
       insuranceCostPerYear: null,
       insuranceRenewalDate: null,
       insurancePolicyNumber: null,
+      isInTraffic: vehicle.isInTraffic,
     );
 
     await update(clearedVehicle);

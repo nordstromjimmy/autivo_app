@@ -39,6 +39,7 @@ class SyncService {
         'insurance_renewal_date': vehicle.insuranceRenewalDate
             ?.toIso8601String(),
         'insurance_policy_number': vehicle.insurancePolicyNumber,
+        'is_in_traffic': vehicle.isInTraffic,
       };
 
       await SupabaseConfig.client.from('vehicles').upsert(data);

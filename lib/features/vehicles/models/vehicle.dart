@@ -101,6 +101,9 @@ class Vehicle extends HiveObject {
   @HiveField(29)
   final String? insuranceType;
 
+  @HiveField(30)
+  final bool isInTraffic;
+
   Vehicle({
     required this.id,
     required this.registrationNumber,
@@ -133,6 +136,7 @@ class Vehicle extends HiveObject {
     this.insuranceRenewalDate,
     this.insurancePolicyNumber,
     this.insuranceType,
+    this.isInTraffic = true,
   }) : createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
@@ -254,6 +258,7 @@ class Vehicle extends HiveObject {
     DateTime? insuranceRenewalDate,
     String? insurancePolicyNumber,
     String? insuranceType,
+    bool? isInTraffic,
   }) {
     return Vehicle(
       id: id ?? this.id,
@@ -288,6 +293,7 @@ class Vehicle extends HiveObject {
       insurancePolicyNumber:
           insurancePolicyNumber ?? this.insurancePolicyNumber,
       insuranceType: insuranceType ?? this.insuranceType,
+      isInTraffic: isInTraffic ?? this.isInTraffic,
     );
   }
 }

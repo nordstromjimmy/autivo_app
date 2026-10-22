@@ -52,6 +52,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       });
     });
 
+    // Split vehicles into two groups
+    final inTraffic = vehicles.where((v) => v.isInTraffic).toList();
+    final offTraffic = vehicles.where((v) => !v.isInTraffic).toList();
+
+    // Build the flat list of widgets (cards + optional divider)
+    final listItems = <Widget>[];
+    for (final vehicle in inTraffic) {
+      listItems.add(VehicleCard(vehicle: vehicle));
+    }
+    if (offTraffic.isNotEmpty) {
+      listItems.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'Avställda fordon',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider()),
+            ],
+          ),
+        ),
+      );
+      for (final vehicle in offTraffic) {
+        listItems.add(VehicleCard(vehicle: vehicle));
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mina Fordon'),
@@ -140,13 +177,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                 ),
               )
-            : ListView.builder(
+            : ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
-                itemCount: vehicles.length,
-                itemBuilder: (context, index) {
-                  return VehicleCard(vehicle: vehicles[index]);
-                },
+                children: listItems,
               ),
       ),
       floatingActionButton: FloatingActionButton(

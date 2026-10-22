@@ -31,6 +31,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   String? _selectedFuelType;
   DateTime? _nextBesiktningDate;
   DateTime? _ownershipStartDate;
+  bool _isInTraffic = true;
 
   bool get isEditMode => widget.existingVehicle != null;
 
@@ -56,6 +57,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
       _selectedFuelType = vehicle.fuelType;
       _nextBesiktningDate = vehicle.nextBesiktningDate;
       _ownershipStartDate = vehicle.ownershipStartDate;
+      _isInTraffic = vehicle.isInTraffic;
     } else {
       _regNumberController = TextEditingController();
       _makeController = TextEditingController();
@@ -126,6 +128,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               : null,
           nextBesiktningDate: _nextBesiktningDate,
           ownershipStartDate: _ownershipStartDate,
+          isInTraffic: _isInTraffic,
         );
       } else {
         // ADD MODE: Create new vehicle (no verification yet)
@@ -144,6 +147,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               : null,
           nextBesiktningDate: _nextBesiktningDate,
           ownershipStartDate: _ownershipStartDate,
+          isInTraffic: _isInTraffic,
         );
       }
 
@@ -583,6 +587,56 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+
+              // ── Trafikstatus ──────────────────────────────────────────────
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'Trafikstatus',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  _isInTraffic ? 'Påställd' : 'Avställd',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Text(
+                  _isInTraffic
+                      ? 'Fordonet är i trafik'
+                      : 'Fordonet är avställt',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                secondary: Icon(
+                  _isInTraffic
+                      ? Icons.directions_car
+                      : Icons.directions_car_outlined,
+                  color: _isInTraffic
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey,
+                ),
+                value: _isInTraffic,
+                onChanged: (value) {
+                  setState(() {
+                    _isInTraffic = value;
+                  });
+                },
+              ),
+
               const SizedBox(height: 16),
 
               // Delete button (only in edit mode)
